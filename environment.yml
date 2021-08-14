@@ -1,0 +1,36 @@
+name: AutoCheckout
+channels:
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - _openmp_mutex=4.5=1_gnu
+  - ca-certificates=2021.7.5=h06a4308_1
+  - certifi=2021.5.30=py36h06a4308_0
+  - ld_impl_linux-64=2.35.1=h7274673_9
+  - libedit=3.1.20210216=h27cfd23_1
+  - libffi=3.2.1=hf484d3e_1007
+  - libgcc-ng=9.3.0=h5101ec6_17
+  - libgomp=9.3.0=h5101ec6_17
+  - libstdcxx-ng=9.3.0=hd4cf53a_17
+  - ncurses=6.2=he6710b0_1
+  - openssl=1.1.1k=h27cfd23_0
+  - pip=21.2.2=py36h06a4308_0
+  - python=3.6.9=h265db76_0
+  - readline=7.0=h7b6447c_5
+  - setuptools=52.0.0=py36h06a4308_0
+  - sqlite=3.33.0=h62c20be_0
+  - tk=8.6.10=hbc83047_0
+  - tzdata=2021a=h5d7bf9c_0
+  - wheel=0.37.0=pyhd3eb1b0_0
+  - xz=5.2.5=h7b6447c_0
+  - zlib=1.2.11=h7b6447c_3
+  - pip:
+    - chardet==3.0.4
+    - idna==2.10
+    - numpy==1.18.3
+    - pillow==7.1.1
+    - pymongo==3.10.1
+    - requests==2.23.0
+    - scipy==1.4.1
+    - urllib3==1.25.11
+prefix: /home/rodrigo/anaconda3/envs/AutoCheckout
