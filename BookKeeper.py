@@ -18,6 +18,7 @@ NUM_SHELF = 6
 NUM_PLATE = 12
 
 
+
 class BookKeeper():
     def __init__(self, dbname):
         # Access instance DB
@@ -136,7 +137,6 @@ class BookKeeper():
                 '$lt': timeEnd
             }
         })
-
 
         for frameDoc in framesCursor:
             cameraID = frameDoc['camera_id']
