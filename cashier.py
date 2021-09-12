@@ -58,6 +58,8 @@ class CustomerReceipt():
 Cashier class to generate receipts
 """
 
+SHOULD_GRAPH = True
+
 
 class Cashier():
     def __init__(self):
@@ -90,6 +92,12 @@ class Cashier():
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
 
         viz = VizUtils(events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, myBK)
+
+        if SHOULD_GRAPH:
+            graph_weight_shelf_data(events, weight_shelf_mean, timestamps, dbName, "Weight Shelf Mean")
+            graph_weight_shelf_data(events, weight_shelf_std, timestamps, dbName, "Weight Shelf Standard")
+            # graph_weight_plate_data(events, weight_plate_mean, timestamps, dbName, "Weight Plate Mean")
+            # graph_weight_plate_data(events, weight_plate_std, timestamps, dbName, "Weight Plate Standard")
 
         # dictionary recording all receipts
         # KEY: customer ID, VALUE: CustomerReceipt
@@ -199,10 +207,10 @@ class Cashier():
 
             if VERBOSE:
                 print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s" % (
-                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
+                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
             else:
                 print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d" % (
-                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
+                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
 
         ################ Display all receipts ################
         if VERBOSE:
