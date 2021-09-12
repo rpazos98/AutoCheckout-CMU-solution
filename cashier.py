@@ -1,21 +1,10 @@
-from pymongo import MongoClient
-import numpy as np
-import base64
 # from cpsdriver.codec import DocObjectCodec
-import cpsdriver.codec as codec
-import datetime as dt
-from datetime import datetime
-from WeightTrigger import WeightTrigger as WT
-import BookKeeper as BK
-import math_utils
-import math
 from ScoreCalculate import *
-
-from utils import *
+from WeightTrigger import WeightTrigger as WT
 from config import *
-
+from utils import *
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
-from viz_utils import graph_weight_shelf_data
+from viz_utils import VizUtils
 
 PUTBACK_JITTER_RATE = 0.75
 GRAB_FROM_SHELF_JITTER_RATE = 0.4
@@ -58,8 +47,6 @@ class CustomerReceipt():
 Cashier class to generate receipts
 """
 
-SHOULD_GRAPH = True
-
 
 class Cashier():
     def __init__(self):
@@ -92,11 +79,7 @@ class Cashier():
         # Non-associated purchasing products
         active_products = []
 
-        if SHOULD_GRAPH:
-            graph_weight_shelf_data(events, weight_shelf_mean, timestamps, dbName, "Weight Shelf Mean")
-            graph_weight_shelf_data(events, weight_shelf_std, timestamps, dbName, "Weight Shelf Standard")
-            # graph_weight_plate_data(events, weight_plate_mean, timestamps, dbName, "Weight Plate Mean")
-            # graph_weight_plate_data(events, weight_plate_std, timestamps, dbName, "Weight Plate Standard")
+        viz = VizUtils(events, timestamps, dbName, weight_shelf_mean, weight_shelf_std)
 
         # dictionary recording all receipts
         # KEY: customer ID, VALUE: CustomerReceipt
@@ -122,6 +105,8 @@ class Cashier():
             # No target for the event found at all
             if (len(targets) == 0):
                 continue
+
+            viz.addEventPosition(event, absolutePos)
 
             if ASSOCIATION_TYPE == CE_ASSOCIATION:
                 target_id, _ = associate_product_ce(absolutePos, targets)
@@ -222,5 +207,5 @@ class Cashier():
                     product, quantity = entry
                     print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail)
                 num_receipt += 1
-
+        viz.graph()
         return receipts
