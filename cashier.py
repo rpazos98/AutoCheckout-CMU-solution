@@ -15,6 +15,8 @@ from utils import *
 from config import *
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
+from viz_utils import graph_weight_shelf_data
+
 PUTBACK_JITTER_RATE = 0.75
 GRAB_FROM_SHELF_JITTER_RATE = 0.4
 
@@ -56,6 +58,8 @@ class CustomerReceipt():
 Cashier class to generate receipts
 """
 
+SHOULD_GRAPH = True
+
 
 class Cashier():
     def __init__(self):
@@ -65,7 +69,6 @@ class Cashier():
         myBK = BK.BookKeeper(dbName)
         weightTrigger = WT(myBK)
 
-        # weight_plate_mean,weight_plate_std,weight_shelf_mean,weight_shelf_std,timestamps,date_times = weightTrigger.get_weights()
         weight_shelf_mean, weight_shelf_std, weight_plate_mean, weight_plate_std = weightTrigger.get_moving_weight()
 
         number_gondolas = len(weight_shelf_mean)
@@ -76,22 +79,11 @@ class Cashier():
 
         # sanity check
         for i in range(number_gondolas):
-            # weight_shelf_mean: [gondola, shelf, timestamp]
-            # weight_shelf_std: [gondola, shelf, timestamp]
-            # weight_plate_mean: [gondola, shelf, plate, timestamp]
-            # weight_plate_std: [gondola, shelf, plate, timestamp]
-            # timestamps: [gondola, timestamp]
             timestamps_count = len(timestamps[i])
-            # print ('weight_shelf_mean', weight_shelf_mean[i].shape)
-            # print ('weight_shelf_std',  weight_shelf_std[i].shape)
-            # print ('weight_plate_mean', weight_plate_mean[i].shape)
-            # print ('weight_plate_std', weight_plate_std[i].shape)
-            # print ('timestamps', timestamps_count)
             assert (timestamps_count == weight_shelf_mean[i].shape[1])
             assert (timestamps_count == weight_shelf_std[i].shape[1])
             assert (timestamps_count == weight_plate_mean[i].shape[2])
             assert (timestamps_count == weight_plate_std[i].shape[2])
-            # print ('timestamps', timestamps[i][0], "to", timestamps[i][-1])
 
         events = weightTrigger.detect_weight_events(weight_shelf_mean, weight_shelf_std, weight_plate_mean,
                                                     weight_plate_std, timestamps)
@@ -99,6 +91,12 @@ class Cashier():
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
         # Non-associated purchasing products
         active_products = []
+
+        if SHOULD_GRAPH:
+            graph_weight_shelf_data(events, weight_shelf_mean, timestamps, dbName, "Weight Shelf Mean")
+            graph_weight_shelf_data(events, weight_shelf_std, timestamps, dbName, "Weight Shelf Standard")
+            # graph_weight_plate_data(events, weight_plate_mean, timestamps, dbName, "Weight Plate Mean")
+            # graph_weight_plate_data(events, weight_plate_std, timestamps, dbName, "Weight Plate Standard")
 
         # dictionary recording all receipts
         # KEY: customer ID, VALUE: CustomerReceipt
@@ -204,10 +202,10 @@ class Cashier():
 
             if VERBOSE:
                 print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s" % (
-                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
+                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
             else:
                 print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d" % (
-                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
+                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
 
         ################ Display all receipts ################
         if VERBOSE:
