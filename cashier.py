@@ -83,6 +83,7 @@ class Cashier():
             assert (timestamps_count == weight_plate_mean[i].shape[2])
             assert (timestamps_count == weight_plate_std[i].shape[2])
 
+
         events = weightTrigger.detect_weight_events(weight_shelf_mean, weight_shelf_std, weight_plate_mean,
                                                     weight_plate_std, timestamps)
         events = weightTrigger.splitEvents(events)
@@ -198,10 +199,10 @@ class Cashier():
 
             if VERBOSE:
                 print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s" % (
-                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
+                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
             else:
                 print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d" % (
-                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
+                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
 
         ################ Display all receipts ################
         if VERBOSE:
@@ -219,7 +220,7 @@ class Cashier():
                     print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail,
                           product.barcode)
                 num_receipt += 1
-        if VIZ:
+if VIZ:
             viz.graph()
         return receipts
 
