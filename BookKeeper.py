@@ -16,9 +16,12 @@ INCH_TO_METER = 0.0254
 
 class BookKeeper():
     def __init__(self, dbname):
+        # Access instance DB
         _mongoClient = MongoClient('mongodb://localhost:27017')
         self.__dbname = dbname
         self.db = _mongoClient[dbname]
+
+        # Reference to DB collections
         self.planogramDB = self.db['planogram']
         self.productsDB = self.db['products']
         self.plateDB = self.db['plate_data']
@@ -38,6 +41,7 @@ class BookKeeper():
         self.productIDsFromPlanogramTable = set()
         self.productIDsFromProductsTable = set()
 
+        # Meta generation
         self.__buildAllProductsCache()
         self. _planogram = self.__loadPlanogram()
         
@@ -133,6 +137,7 @@ class BookKeeper():
                 '$lt': timeEnd
             }
         })
+
 
         for frameDoc in framesCursor:
             cameraID = frameDoc['camera_id']

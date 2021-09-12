@@ -18,6 +18,7 @@ from config import *
 PUTBACK_JITTER_RATE = 0.75
 GRAB_FROM_SHELF_JITTER_RATE = 0.4
 
+
 class CustomerReceipt():
     """
     checkIn/Out (datetime): time when customer enters/leaves the store
@@ -27,16 +28,17 @@ class CustomerReceipt():
         Value: (product, quantities)
     target (BK.Target): Target object for this customer
     """
+
     def __init__(self, customerID):
         self.customerID = customerID
         # productID -> (product, num_product)
-        self.purchaseList = {} 
+        self.purchaseList = {}
 
     def purchase(self, product, num_product):
         productID = product.barcode
         if productID in self.purchaseList:
             product, quantity = self.purchaseList[productID]
-            self.purchaseList[productID] = (product, quantity+num_product)
+            self.purchaseList[productID] = (product, quantity + num_product)
         else:
             self.purchaseList[productID] = (product, num_product)
 
@@ -45,25 +47,27 @@ class CustomerReceipt():
         if productID in self.purchaseList:
             product, quantity = self.purchaseList[productID]
             if quantity > num_product:
-                self.purchaseList[productID] = (product, quantity-num_product)
+                self.purchaseList[productID] = (product, quantity - num_product)
             else:
                 del self.purchaseList[productID]
+
 
 """
 Cashier class to generate receipts
 """
+
+
 class Cashier():
     def __init__(self):
         pass
-    
+
     def process(self, dbName):
         myBK = BK.BookKeeper(dbName)
         weightTrigger = WT(myBK)
 
         # weight_plate_mean,weight_plate_std,weight_shelf_mean,weight_shelf_std,timestamps,date_times = weightTrigger.get_weights()
         weight_shelf_mean, weight_shelf_std, weight_plate_mean, weight_plate_std = weightTrigger.get_moving_weight()
-        
-        
+
         number_gondolas = len(weight_shelf_mean)
         # reduce timestamp 
         timestamps = weightTrigger.get_agg_timestamps()
@@ -88,25 +92,26 @@ class Cashier():
             assert (timestamps_count == weight_plate_mean[i].shape[2])
             assert (timestamps_count == weight_plate_std[i].shape[2])
             # print ('timestamps', timestamps[i][0], "to", timestamps[i][-1])
-            
-        events = weightTrigger.detect_weight_events(weight_shelf_mean, weight_shelf_std, weight_plate_mean, weight_plate_std, timestamps)
+
+        events = weightTrigger.detect_weight_events(weight_shelf_mean, weight_shelf_std, weight_plate_mean,
+                                                    weight_plate_std, timestamps)
         events = weightTrigger.splitEvents(events)
-        events.sort(key=lambda pickUpEvent:pickUpEvent.triggerBegin)
+        events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
         # Non-associated purchasing products
         active_products = []
 
         # dictionary recording all receipts
         # KEY: customer ID, VALUE: CustomerReceipt
         receipts = {}
-        print("Capture {} events in the databse {}".format(len(events), dbName))
+        print("Capture {} events in the database {}".format(len(events), dbName))
         print("==============================================================")
         for event in events:
             if VERBOSE:
-                print ("----------------")
-                print ('Event: ', event)
+                print("----------------")
+                print('Event: ', event)
 
             ################################ Naive Association ################################
-            
+
             # absolutePos = myBK.getProductCoordinates(productID)
             absolutePos = event.getEventCoordinates(myBK)
             targets = myBK.getTargetsForEvent(event)
@@ -117,18 +122,17 @@ class Cashier():
                     receipts[target_id] = customer_receipt
 
             # No target for the event found at all
-            if (len(targets)==0):
+            if (len(targets) == 0):
                 continue
-            
+
             if ASSOCIATION_TYPE == CE_ASSOCIATION:
-                target_id, _ =  associate_product_ce(absolutePos, targets)
+                target_id, _ = associate_product_ce(absolutePos, targets)
             elif ASSOCIATION_TYPE == CLOSEST_ASSOCIATION:
                 target_id, _ = associate_product_closest(absolutePos, targets)
             else:
-                target_id, _ =  associate_product_naive(absolutePos, targets)
+                target_id, _ = associate_product_naive(absolutePos, targets)
 
-
-             ################################ Calculate score ################################
+            ################################ Calculate score ################################
 
             # TODO: omg this is weird. might need to concatenate adjacent events
             isPutbackEvent = False
@@ -138,33 +142,33 @@ class Cashier():
                 if target_id not in receipts:
                     continue
                 customer_receipt = receipts[target_id]
-                purchase_list = customer_receipt.purchaseList #  productID -> (product, num_product)
+                purchase_list = customer_receipt.purchaseList  # productID -> (product, num_product)
 
                 # find most possible putback product whose weight is closest to the event weight
                 candidate_products = []
                 for item in purchase_list.values():
                     product, num_product = item
-                    for count in range(1, num_product+1):
+                    for count in range(1, num_product + 1):
                         candidate_products.append((product, count))
-                
+
                 if (len(candidate_products) == 0):
                     continue
                 # item = (product, count)
-                candidate_products.sort(key=lambda item:abs(item[0].weight*item[1] - event.deltaWeight))
+                candidate_products.sort(key=lambda item: abs(item[0].weight * item[1] - event.deltaWeight))
                 product, putback_count = candidate_products[0]
-                
+
                 # If weight difference is too large, ignore this event
-                if (abs(event.deltaWeight) < PUTBACK_JITTER_RATE*product.weight):
+                if (abs(event.deltaWeight) < PUTBACK_JITTER_RATE * product.weight):
                     continue
 
                 # Put the product on the shelf will affect planogram
                 myBK.addProduct(event.getEventAllPositions(myBK), product)
-            else:    
+            else:
                 scoreCalculator = ScoreCalculator(myBK, event)
                 topProductScore = scoreCalculator.getTopK(1)[0]
                 if VERBOSE:
-                    print ("top 5 predicted products:")
-                    for productScore in  scoreCalculator.getTopK(5):
+                    print("top 5 predicted products:")
+                    for productScore in scoreCalculator.getTopK(5):
                         print(productScore)
 
                 topProductExtended = myBK.getProductByID(topProductScore.barcode)
@@ -172,7 +176,7 @@ class Cashier():
                 product = topProductExtended
 
                 # If deltaWeight is too small compared to the predicted product, ignore this event
-                if (abs(event.deltaWeight) < GRAB_FROM_SHELF_JITTER_RATE*product.weight):
+                if (abs(event.deltaWeight) < GRAB_FROM_SHELF_JITTER_RATE * product.weight):
                     continue
             productID = product.barcode
 
@@ -184,12 +188,13 @@ class Cashier():
             # Existing customer, update receipt
             else:
                 customer_receipt = receipts[target_id]
-            
+
             if isPutbackEvent:
                 # Putback count from previous step
                 pred_quantity = putback_count
                 if DEBUG:
-                    customer_receipt.purchase(product, pred_quantity) # In the evaluation code, putback is still an event, so we accumulate for debug purpose
+                    customer_receipt.purchase(product,
+                                              pred_quantity)  # In the evaluation code, putback is still an event, so we accumulate for debug purpose
                 else:
                     customer_receipt.putback(product, pred_quantity)
             else:
@@ -198,10 +203,11 @@ class Cashier():
                 customer_receipt.purchase(product, pred_quantity)
 
             if VERBOSE:
-                print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s" % (product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
+                print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s" % (
+                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
             else:
-                print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d" % (product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
-
+                print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d" % (
+                product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
 
         ################ Display all receipts ################
         if VERBOSE:
@@ -209,14 +215,14 @@ class Cashier():
             if (len(receipts) == 0):
                 print("No receipts!")
                 return {}
-        
+
             for id, customer_receipt in receipts.items():
                 print("============== Receipt {} ==============".format(num_receipt))
                 print("Customer ID: " + id)
                 print("Purchase List: ")
                 for _, entry in customer_receipt.purchaseList.items():
                     product, quantity = entry
-                    print("*Name: "+product.name + ", Quantities: " + str(quantity), product.thumbnail)
+                    print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail)
                 num_receipt += 1
-        
+
         return receipts
