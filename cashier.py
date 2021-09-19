@@ -76,10 +76,8 @@ class Cashier():
                                                     weight_plate_std, timestamps)
         events = weightTrigger.splitEvents(events)
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
-        # Non-associated purchasing products
-        active_products = []
 
-        viz = VizUtils(events, timestamps, dbName, weight_shelf_mean, weight_shelf_std)
+        viz = VizUtils(events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, myBK)
 
         # dictionary recording all receipts
         # KEY: customer ID, VALUE: CustomerReceipt

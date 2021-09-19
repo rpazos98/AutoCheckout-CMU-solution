@@ -13,6 +13,9 @@ import os
 from datetime import datetime
 
 INCH_TO_METER = 0.0254
+NUM_GONDOLA = 5
+NUM_SHELF = 6
+NUM_PLATE = 12
 
 
 class BookKeeper():
@@ -49,10 +52,7 @@ class BookKeeper():
         self._buildDictsFromStoreMeta()
 
     def __loadPlanogram(self):
-        num_gondola = 5
-        num_shelf = 6
-        num_plate = 12
-        planogram = np.empty((num_gondola, num_shelf, num_plate), dtype=object)
+        planogram = np.empty((NUM_GONDOLA, NUM_SHELF, NUM_PLATE), dtype=object)
 
         for item in self.planogramDB.find():
 
@@ -301,7 +301,10 @@ class BookKeeper():
             shelfTranslation = self._getTranslation(self._shelvesDict[shelfMetaKey])
             absolute3D.translateBy(shelfTranslation['x'], shelfTranslation['y'], shelfTranslation['z'])
 
-            plateTranslation = self._getTranslation(self._platesDict[plateMetaKey])
+            key_ = self._platesDict.get(plateMetaKey)
+            if key_ is None:
+                return absolute3D
+            plateTranslation = self._getTranslation(key_)
             absolute3D.translateBy(plateTranslation['x'], plateTranslation['y'], plateTranslation['z'])
 
         return absolute3D
