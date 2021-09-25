@@ -66,18 +66,19 @@ class VizUtils:
                 fig = plt.gcf()
                 fig.autofmt_xdate()
                 if had_events and GRAPH_ONLY_WITH_EVENTS:
-                    plt.title("{} {} Gondola {} Shelf {}".format(type, db_name, str(gondola_idx), str(shelf_idx)))
+                    plt.title(
+                        "{} {} Gondola {} Shelf {}".format(type, db_name, str(gondola_idx + 1), str(shelf_idx + 1)))
                     plt.xlabel("Timestamp")
                     plt.ylabel("Weight in grams")
                     plt.plot(gondola_timestamps, y, color="green")
-                    path_string = "results/{}/g{}/s{}/{}.png".format(db_name, gondola_idx, shelf_idx, type)
+                    path_string = "results/{}/g{}/s{}/{}.png".format(db_name, gondola_idx + 1, shelf_idx + 1, type)
                     save_path = Path(path_string).resolve()
                     save_path.parent.mkdir(parents=True, exist_ok=True)
                     plt.savefig(str(save_path))
                     logging.info("Saving {}".format(path_string))
                 plt.close()
 
-    def graph_weight_plate_data(self, events, plate_data, timestamps, db_name, type):
+    def graph_weight_plate_data(self, plate_data, timestamps, db_name, type):
         for gondola_idx, gondola in enumerate(plate_data):
             gondola_timestamps = timestamps[gondola_idx]
             f = lambda x: datetime.fromtimestamp(x)
@@ -87,14 +88,16 @@ class VizUtils:
                 for plate_idx, plate in enumerate(shelf):
                     y = plate
                     plt.title(
-                        "{} {} Gondola {} Shelf {} Plate {}".format(type, db_name, str(gondola_idx), str(shelf_idx),
-                                                                    str(plate_idx)))
+                        "{} {} Gondola {} Shelf {} Plate {}".format(type, db_name, str(gondola_idx + 1),
+                                                                    str(shelf_idx + 1),
+                                                                    str(plate_idx + 1)))
                     plt.xlabel("Timestamp")
                     plt.ylabel("Weight in grams")
                     plt.plot(gondola_timestamps, y, color="green")
                     fig = plt.gcf()
                     fig.autofmt_xdate()
-                    path_string = "results/{}/g{}/s{}/p{}/{}.png".format(db_name, gondola_idx, shelf_idx, plate_idx,
+                    path_string = "results/{}/g{}/s{}/p{}/{}.png".format(db_name, gondola_idx + 1, shelf_idx + 1,
+                                                                         plate_idx + 1,
                                                                          type)
                     save_path = Path(path_string).resolve()
                     save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -122,7 +125,7 @@ class VizUtils:
             eye=dict(x=1.25, y=1.25, z=1.25)
         )
         path_string_html = "results/{}/{}.html".format(db_name, type)
-        events.update_layout(scene_camera=camera, title=path_string_html)
+        events.update_layout(scene_camera=camera, title=path_string_html, scene={"aspectmode": "cube"})
         events.write_html(path_string_html)
         logging.info("Saving {}".format(path_string_html))
 

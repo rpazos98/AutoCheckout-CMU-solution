@@ -203,7 +203,7 @@ class Cashier():
                 print("Purchase List: ")
                 for _, entry in customer_receipt.purchaseList.items():
                     product, quantity = entry
-                    print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail)
+                    print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail, product.barcode)
                 num_receipt += 1
         viz.graph()
         return receipts

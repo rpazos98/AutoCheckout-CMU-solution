@@ -1,0 +1,66 @@
+BASELINE-7
+
+============== Receipt 0 ==============
+Customer ID: 17267280123324038256
+Purchase List:
+*Name: El Sabroso Hot Spicy Cracklins, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/102001-1_3091e392-ec45-481c-87f3-d5fe5b4a1de3_128x.png?v=1565210266
+*Name: AZ GREEN TEA, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/img-313132011_2_640x640_116c5ab0-845f-47ce-9b04-41b814c45be0_128x.jpg?v=1566252111
+============== Receipt 1 ==============
+Customer ID: 7946131933500845507
+Purchase List:
+*Name: Soylent Strawberry, Quantities: 1
+*Name: MS SWT TEA ORIGINAL RTD, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/584085855.moonshinesweettea-16oz-og-front_128x.jpg?v=1565224319
+
+---------------------------------------------
+BASELINE-8
+
+============== Receipt 0 ==============
+GIRL
+Customer ID: 13062817617171116882
+Purchase List:
+*Name: Taco Bell Diablo, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/51EOtDZUN-L_02a20023-6270-4908-821d-277f4ad90fb8_128x.jpg?v=1565210388
+*Name: Haribo Gold Bears Gummi Candy, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/900_d81a2d0b-991b-45fc-857e-43f1dfd56a7e_128x.jpg?v=1565210287
+============== Receipt 1 ==============
+BOY
+Customer ID: 15658319909819810116
+Purchase List:
+*Name: ARRWHD SPRNG WTR, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/arrowhead-spring-water-1l_a10f5d88-1cbe-4900-bc3c-2fe2bbe7e56a_128x.jpg?v=1565210215
+*Name: Boomchickapop Sea Salt Popcorn, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/Angies_BCP_small_front_SS_4.8oz_954d4143-c89b-42bf-9799-2fd1635c4fd5_128x.png?v=1565210220
+*Name: El Sabroso Blazing Hot Cheetos, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/243090-1_3be6caea-96bc-4bcb-aa2d-b873a3648e94_128x.png?v=1565210263
+*Name: ARRWHD MTN WTR SPRT BTL, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/45002084-1_a81951d9-5b43-45b5-acce-076f94e751c0_128x.jpg?v=1565210214
+
+---------------------------------------------
+BASELINE-10
+
+============== Receipt 0 ==============
+GIRL
+Customer ID: 14029885989282760591
+Purchase List:
+*Name: Boomchickapop Sweet & Salty Kettle Corn, Quantities: 2 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/GUEST_d22545b5-3324-4f1e-a661-530ece1d7092_128x.jpg?v=1565210222
+*Name: FIJI NAT ARTSN WTR 1.5L, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/29742816-1_09b01554-6196-43c8-a0e5-a6e77aaf4ece_128x.jpg?v=1565210269
+============== Receipt 1 ==============
+BOY
+Customer ID: 9627915597770929492
+Purchase List:
+*Name: ICE Ginger Lime, Quantities: 2
+*Name: ACQUA PANNA PET MINERAL DRINK, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/54543311-1_52a9767b-c3f0-4505-8a65-e85092665bda_128x.jpg?v=1565210202
+
+---------------------------------------------
+BASELINE-12
+
+============== Receipt 0 ==============
+BOY WITH JEANS
+Customer ID: 6089669910965846909
+Purchase List:
+*Name: FIJI WATER .5 LTR, Quantities: 2 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/fa8ca5380842e626c9d71fbead19caa9_128x.jpg?v=1566945931 632565000012
+*Name: Baked Snacks Pretzel, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/P1000628_128x.jpg?v=1565210246 041419420058
+============== Receipt 1 ==============
+GIRL
+Customer ID: 14565789552275535698
+Purchase List:
+*Name: MS SWT TEA PEACH RTD, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/136570733-1_7bbd0d7e-630e-4b9d-ae84-c428060e30a7_128x.jpg?v=1565210338 859000002145
+============== Receipt 2 ==============
+BOY WITH SHORTS
+Customer ID: 10159784492149311492
+Purchase List:
+*Name: ACQUA PANNA PET MINERAL DRINK, Quantities: 1 https://cdn.shopify.com/s/files/1/0083/0704/8545/products/54543311-1_52a9767b-c3f0-4505-8a65-e85092665bda_128x.jpg?v=1565210202 041508922487
