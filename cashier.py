@@ -94,7 +94,8 @@ class Cashier():
             # absolutePos = myBK.getProductCoordinates(productID)
             absolutePos = event.getEventCoordinates(myBK)
             targets = myBK.getTargetsForEvent(event)
-            viz.addEventPosition(event, absolutePos)
+            if VIZ:
+                viz.addEventPosition(event, absolutePos)
             # Initliaze a customer receipt for all new targets
             for target_id in targets.keys():
                 if target_id not in receipts:
@@ -181,7 +182,8 @@ class Cashier():
                 # Predict quantity from delta weight
                 pred_quantity = max(int(round(abs(event.deltaWeight / product.weight))), 1)
                 customer_receipt.purchase(product, pred_quantity)
-            viz.addEventProduct(event, {"name": product.name, "quantity": pred_quantity, "weight": product.weight})
+            if VIZ:
+                viz.addEventProduct(event, {"name": product.name, "quantity": pred_quantity, "weight": product.weight})
 
             if VERBOSE:
                 print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s" % (
@@ -203,7 +205,9 @@ class Cashier():
                 print("Purchase List: ")
                 for _, entry in customer_receipt.purchaseList.items():
                     product, quantity = entry
-                    print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail, product.barcode)
+                    print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail,
+                          product.barcode)
                 num_receipt += 1
-        viz.graph()
+        if VIZ:
+            viz.graph()
         return receipts

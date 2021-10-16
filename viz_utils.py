@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from plotly.subplots import make_subplots
 
 from BookKeeper import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
 

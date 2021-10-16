@@ -18,6 +18,9 @@ if response.status_code == 200:
     with open('competition/test_cases.json', 'w') as f:
         json.dump(testCases, f)
 
+# with open("competition/test_cases_specific.json", 'r') as f:
+#     testCases = json.load(f)
+
 
 
 videosDir = './videos/'
@@ -39,7 +42,7 @@ if os.path.exists(testCaseJSONFilePath):
 for testCase in testCases:
     archives = testCase['archives']
     name = testCase['name']
-    if name not in testCaseStartTime:
+    if True:
         videos = testCase['videos']
         dirForCurrentTestCase = videosDir + name
         if os.path.exists(dirForCurrentTestCase):

@@ -1,7 +1,5 @@
 # Code for Evaluation
 from BookKeeper import *
-from WeightTrigger import WeightTrigger as WT
-from utils import *
 from cashier import Cashier
 import json
 
