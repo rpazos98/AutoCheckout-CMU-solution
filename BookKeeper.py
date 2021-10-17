@@ -351,22 +351,25 @@ class BookKeeper():
         product = self.getProductByID(productID)
         return product.positions
 
-    def getTestStartTime(self):
+    def getCleanStartTime(self):
         testCaseStartTimeJSONFilePath = './competition/TestCaseStartTime.json'
         if os.path.exists(testCaseStartTimeJSONFilePath):
             with open(testCaseStartTimeJSONFilePath, 'r') as f:
                 testStartTime = json.load(f)
             if self.__dbname not in testStartTime:
                 return 0
-            videoStartTime = testStartTime[self.__dbname]
-            dbStartTime = self.plateDB.find_one(sort=[("timestamp", 1)])["timestamp"]
-            if videoStartTime - dbStartTime >= 10:
-                return videoStartTime
-            else:
-                return 0
+            return testStartTime[self.__dbname]
         else:
             print(
                 "!!!WARNING: Didn't find competition/TestCaseStartTime.json, results might not be accurate. Please run TimeTravel.py to get the json file")
+            return 0
+
+    def getTestStartTime(self):
+        videoStartTime = self.getCleanStartTime()
+        dbStartTime = self.plateDB.find_one(sort=[("timestamp", 1)])["timestamp"]
+        if videoStartTime - dbStartTime >= 10:
+            return videoStartTime
+        else:
             return 0
 
 

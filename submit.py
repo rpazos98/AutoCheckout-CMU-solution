@@ -1,4 +1,4 @@
-from cashier import Cashier
+from cashier import Cashier, VideoCashier
 import subprocess
 import json
 import os
@@ -49,6 +49,8 @@ def generate_output():
         dbName = test_db['name']
         dbId = test_db['uuid']
         receipts = myCashier.process(dbName)
+        myVideoCashier = VideoCashier(db_name=dbName)
+        video_receipts = myVideoCashier.process()
         # Generate output file
         path = "outputs/output-{}.json".format(dbName)
         output_paths.append(path)

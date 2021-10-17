@@ -1,7 +1,16 @@
 # from cpsdriver.codec import DocObjectCodec
+import datetime
+import os.path
+from pathlib import Path
+
+import moviepy
+from moviepy.editor import *
+from moviepy.video.fx.crop import crop
+
 from ScoreCalculate import *
 from WeightTrigger import WeightTrigger as WT
 from config import *
+from cpsdriver.codec import Targets
 from utils import *
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
 from viz_utils import VizUtils
@@ -211,3 +220,78 @@ class Cashier():
         if VIZ:
             viz.graph()
         return receipts
+
+
+class VideoCashier:
+
+    def __init__(self, db_name):
+        self.db_name = db_name
+        self.myBK = BK.BookKeeper(db_name)
+        self.db = self.myBK.db
+        self.crop_dict = {"192.168.1.100_": {"x1": 1200, "y1": 0, "x2": 1740, "y2": 500},
+                          "192.168.1.101_": {"x1": 500, "y1": 0, "x2": 1140, "y2": 460},
+                          "192.168.1.102_": {"x1": 1390, "y1": 0, "x2": 2150, "y2": 926},
+                          "192.168.1.103_": {"x1": 630, "y1": 0, "x2": 1366, "y2": 1062},
+                          "192.168.1.107_": {"x1": 1096, "y1": 600, "x2": 2362, "y2": 1516},
+                          "192.168.1.109_": {"x1": 670, "y1": 626, "x2": 1530, "y2": 1518},
+                          "192.168.1.110_": {"x1": 68, "y1": 740, "x2": 1142, "y2": 1514}}
+
+    def process(self):
+        target_id_to_store_exit_time = self.get_store_exit_time()
+        target_id_to_relative_store_exit_time = self.transform_to_video_relative_time(target_id_to_store_exit_time)
+        target_to_clips_dir = self.create_clips(target_id_to_relative_store_exit_time)
+
+    def get_store_exit_time(self):
+        result = {}
+        targets = self.db['full_targets']
+        for item in targets.find():
+            if item["document"]["targets"]:
+                in_memory_targets = Targets.from_dict(item)
+                for target in in_memory_targets.targets:
+                    result[target.target_id] = in_memory_targets.timestamp
+        return result
+
+    def transform_to_video_relative_time(self, target_id_to_store_exit_time):
+        result = {}
+        start_time = datetime.datetime.fromtimestamp(self.myBK.getCleanStartTime())
+        for key in target_id_to_store_exit_time.keys():
+            timestamp = target_id_to_store_exit_time[key]
+            datetimed_timestamp = datetime.datetime.fromtimestamp(timestamp)
+            seconds = datetimed_timestamp - start_time
+            result[key] = seconds
+        return result
+
+    def create_clips(self, target_id_to_relative_store_exit_time):
+        path = './videos/{}'.format(self.db_name)
+        read_path = Path(path).resolve()
+        videos = os.listdir(str(read_path))
+        result = {}
+        for target in target_id_to_relative_store_exit_time.keys():
+            save_path = os.path.join(str(read_path), target)
+            Path(save_path).mkdir(parents=True, exist_ok=True)
+            exit_time = target_id_to_relative_store_exit_time[target]
+            result[target] = save_path
+            for video in videos:
+                if self.should_generate_video(video):
+                    video_path = os.path.join(str(read_path), video)
+                    start = exit_time - datetime.timedelta(seconds=3)
+                    end = exit_time
+                    clip = VideoFileClip(video_path).subclip(str(start), str(end))
+                    # Missing video trimming
+                    crop_limits = self.get_crop_limits(video)
+                    clip = crop(clip, x1=crop_limits["x1"], y1=crop_limits["y1"], x2=crop_limits["x2"],
+                                y2=crop_limits["y2"])
+                    save_clip_path = os.path.join(save_path, video)
+                    clip.write_videofile("{}".format(save_clip_path))
+        return result
+
+    def get_crop_limits(self, video):
+        for key in self.crop_dict.keys():
+            if key in video:
+                return self.crop_dict[key]
+
+    def should_generate_video(self, video):
+        for key in self.crop_dict.keys():
+            if key in video:
+                return True
+        return False
