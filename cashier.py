@@ -14,6 +14,8 @@ from cpsdriver.codec import Targets
 from utils import *
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
 from viz_utils import VizUtils
+import cv2
+import mediapipe as mp
 
 PUTBACK_JITTER_RATE = 0.75
 GRAB_FROM_SHELF_JITTER_RATE = 0.4
@@ -267,14 +269,14 @@ class VideoCashier:
         videos = os.listdir(str(read_path))
         result = {}
         for target in target_id_to_relative_store_exit_time.keys():
-            save_path = os.path.join(str(read_path), target)
+            save_path = os.path.join(str(read_path), "targets/{}".format(target))
             Path(save_path).mkdir(parents=True, exist_ok=True)
             exit_time = target_id_to_relative_store_exit_time[target]
             result[target] = save_path
             for video in videos:
                 if self.should_generate_video(video):
                     video_path = os.path.join(str(read_path), video)
-                    start = exit_time - datetime.timedelta(seconds=3)
+                    start = exit_time - datetime.timedelta(seconds=1)
                     end = exit_time
                     clip = VideoFileClip(video_path).subclip(str(start), str(end))
                     # Missing video trimming
@@ -282,7 +284,8 @@ class VideoCashier:
                     clip = crop(clip, x1=crop_limits["x1"], y1=crop_limits["y1"], x2=crop_limits["x2"],
                                 y2=crop_limits["y2"])
                     save_clip_path = os.path.join(save_path, video)
-                    clip.write_videofile("{}".format(save_clip_path))
+                    clip.write_videofile(save_clip_path)
+                    # self.add_pose(save_clip_path)
         return result
 
     def get_crop_limits(self, video):
@@ -295,3 +298,35 @@ class VideoCashier:
             if key in video:
                 return True
         return False
+
+    def add_pose(self, save_clip_path):
+        mp_drawing = mp.solutions.drawing_utils
+        mp_pose = mp.solutions.pose
+        cap = cv2.VideoCapture(save_clip_path)
+        pose = mp_pose.Pose()
+
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        writer = cv2.VideoWriter("{}-pose.mp4".format(save_clip_path), cv2.VideoWriter_fourcc(*'DIVX'), 20,
+                                 (width, height))
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frame = cv2.flip(frame, 1)
+            height, width, _ = frame.shape
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = pose.process(frame_rgb)
+            if results.pose_landmarks is not None:
+                mp_drawing.draw_landmarks(
+                    frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                    mp_drawing.DrawingSpec(color=(128, 0, 250), thickness=2, circle_radius=3),
+                    mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=2))
+            cv2.imshow("Frame", frame)
+            writer.write(frame)
+            if cv2.waitKey(1) & 0xFF == 27:
+                break
+        cap.release()
+        writer.release()
+        cv2.destroyAllWindows()
