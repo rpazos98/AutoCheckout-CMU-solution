@@ -7,6 +7,7 @@ __pycache__
 env
 .vscode
 outputs
+send
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/pycharm+all,macos,windows,linux

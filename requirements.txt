@@ -12,3 +12,4 @@ mediapipe
 opencv-python
 pascal-voc-writer
 detecto
+albumentations

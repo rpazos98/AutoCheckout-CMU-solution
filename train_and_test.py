@@ -1,29 +1,37 @@
-import matplotlib.pyplot as plt
+import os
+
+from detecto.core import Dataset, Model, DataLoader
 from detecto.utils import read_image
-from detecto.utils import xml_to_csv
-
-from detecto.core import Dataset, Model
 from detecto.visualize import show_labeled_image, plot_prediction_grid, detect_video, detect_live
+from matplotlib import pyplot as plt
 
-DATA_ROOT = 'product-dataset/created/'
+TRAIN_ROOT = 'product-dataset/created/train'
+TEST_ROOT = 'product-dataset/created/test'
+MODEL_PATH = 'model_weights.pth'
+LABELS = ["818780014229", "071063437553", "818780014243", "078907420108", "012000028458"]
 
 
 def main():
-    xml_to_csv(DATA_ROOT, 'labels.csv')
-    dataset = Dataset(DATA_ROOT)
+    train = Dataset(TRAIN_ROOT)
+    test = Dataset(TEST_ROOT)
 
-    for image, targets in dataset:
+    train = DataLoader(train, batch_size=10, shuffle=True)
+
+    for image, targets in test:
         show_labeled_image(image, targets['boxes'], targets['labels'])
 
-    # your_labels = ["818780014229", "071063437553", "818780014243", "078907420108"]
-    # model = Model(your_labels)
-    #
-    # model.fit(dataset, verbose=True)
-    #
-    # # plot_prediction_grid(model, images, dim=(2, 2), figsize=(8, 8))
-    # detect_video(model, 'admin_aifi12345@192.168.1.107_2020-04-20_08-02-57.mp4',
-    #              'admin_aifi12345@192.168.1.107_2020-04-20_08-02-57-prediction.mp4')
-    # detect_live(model, score_filter=0.7)  # Note: may not work on VMs
+    if not os.path.isfile(MODEL_PATH):
+        model = Model(LABELS)
+        losses = model.fit(train, val_dataset=test, verbose=True, epochs=5)
+        model.save(MODEL_PATH)
+        plt.plot(losses)
+        plt.show()
+    else:
+        model = Model.load(MODEL_PATH, LABELS)
+
+    image = read_image("product-dataset/created/test/012000028458-0.png")
+    labels, boxes, scores = model.predict_top(image)
+    show_labeled_image(image, boxes, labels)
 
 
 if __name__ == '__main__':
