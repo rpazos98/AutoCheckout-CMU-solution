@@ -7,7 +7,7 @@ scipy==1.4.1
 matplotlib==3.3.4
 plotly
 pandas
-moviepy
+moviepy==1.0.3
 mediapipe
 opencv-python
 pascal-voc-writer
