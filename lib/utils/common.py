@@ -28,7 +28,8 @@ class Human:
     """
     body_parts: list of BodyPart
     """
-    __slots__ = ('body_parts', 'pairs', 'uidx_list', 'score')
+
+    __slots__ = ("body_parts", "pairs", "uidx_list", "score")
 
     def __init__(self, pairs):
         self.pairs = []
@@ -40,16 +41,24 @@ class Human:
 
     @staticmethod
     def _get_uidx(part_idx, idx):
-        return '%d-%d' % (part_idx, idx)
+        return "%d-%d" % (part_idx, idx)
 
     def add_pair(self, pair):
         self.pairs.append(pair)
-        self.body_parts[pair.part_idx1] = BodyPart(Human._get_uidx(pair.part_idx1, pair.idx1),
-                                                   pair.part_idx1,
-                                                   pair.coord1[0], pair.coord1[1], pair.score)
-        self.body_parts[pair.part_idx2] = BodyPart(Human._get_uidx(pair.part_idx2, pair.idx2),
-                                                   pair.part_idx2,
-                                                   pair.coord2[0], pair.coord2[1], pair.score)
+        self.body_parts[pair.part_idx1] = BodyPart(
+            Human._get_uidx(pair.part_idx1, pair.idx1),
+            pair.part_idx1,
+            pair.coord1[0],
+            pair.coord1[1],
+            pair.score,
+        )
+        self.body_parts[pair.part_idx2] = BodyPart(
+            Human._get_uidx(pair.part_idx2, pair.idx2),
+            pair.part_idx2,
+            pair.coord2[0],
+            pair.coord2[1],
+            pair.score,
+        )
         self.uidx_list.add(Human._get_uidx(pair.part_idx1, pair.idx1))
         self.uidx_list.add(Human._get_uidx(pair.part_idx2, pair.idx2))
 
@@ -83,7 +92,11 @@ class Human:
         _LEar = CocoPart.LEar.value
 
         _THRESHOLD_PART_CONFIDENCE = 0.2
-        parts = [part for idx, part in self.body_parts.items() if part.score > _THRESHOLD_PART_CONFIDENCE]
+        parts = [
+            part
+            for idx, part in self.body_parts.items()
+            if part.score > _THRESHOLD_PART_CONFIDENCE
+        ]
 
         is_nose, part_nose = _include_part(parts, _NOSE)
         if not is_nose:
@@ -98,8 +111,14 @@ class Human:
         is_leye, part_leye = _include_part(parts, _LEye)
         if is_reye and is_leye:
             size = max(size, img_w * (part_reye.x - part_leye.x) * 2.0)
-            size = max(size,
-                       img_w * math.sqrt((part_reye.x - part_leye.x) ** 2 + (part_reye.y - part_leye.y) ** 2) * 2.0)
+            size = max(
+                size,
+                img_w
+                * math.sqrt(
+                    (part_reye.x - part_leye.x) ** 2 + (part_reye.y - part_leye.y) ** 2
+                )
+                * 2.0,
+            )
 
         if mode == 1:
             if not is_reye and not is_leye:
@@ -136,15 +155,19 @@ class Human:
         if _round(x2 - x) == 0.0 or _round(y2 - y) == 0.0:
             return None
         if mode == 0:
-            return {"x": _round((x + x2) / 2),
-                    "y": _round((y + y2) / 2),
-                    "w": _round(x2 - x),
-                    "h": _round(y2 - y)}
+            return {
+                "x": _round((x + x2) / 2),
+                "y": _round((y + y2) / 2),
+                "w": _round(x2 - x),
+                "h": _round(y2 - y),
+            }
         else:
-            return {"x": _round(x),
-                    "y": _round(y),
-                    "w": _round(x2 - x),
-                    "h": _round(y2 - y)}
+            return {
+                "x": _round(x),
+                "y": _round(y),
+                "w": _round(x2 - x),
+                "h": _round(y2 - y),
+            }
 
     def get_upper_body_box(self, img_w, img_h):
         """
@@ -162,9 +185,16 @@ class Human:
         _RSHOULDER = CocoPart.RShoulder.value
         _LSHOULDER = CocoPart.LShoulder.value
         _THRESHOLD_PART_CONFIDENCE = 0.3
-        parts = [part for idx, part in self.body_parts.items() if part.score > _THRESHOLD_PART_CONFIDENCE]
-        part_coords = [(img_w * part.x, img_h * part.y) for part in parts if
-                       part.part_idx in [0, 1, 2, 5, 8, 11, 14, 15, 16, 17]]
+        parts = [
+            part
+            for idx, part in self.body_parts.items()
+            if part.score > _THRESHOLD_PART_CONFIDENCE
+        ]
+        part_coords = [
+            (img_w * part.x, img_h * part.y)
+            for part in parts
+            if part.part_idx in [0, 1, 2, 5, 8, 11, 14, 15, 16, 17]
+        ]
 
         if len(part_coords) < 5:
             return None
@@ -213,16 +243,19 @@ class Human:
 
         if _round(x2 - x) == 0.0 or _round(y2 - y) == 0.0:
             return None
-        return {"x": _round((x + x2) / 2),
-                "y": _round((y + y2) / 2),
-                "w": _round(x2 - x),
-                "h": _round(y2 - y)}
+        return {
+            "x": _round((x + x2) / 2),
+            "y": _round((y + y2) / 2),
+            "w": _round(x2 - x),
+            "h": _round(y2 - y),
+        }
 
     def __str__(self):
-        return ' '.join([str(x) for x in self.body_parts.values()])
+        return " ".join([str(x) for x in self.body_parts.values()])
 
     def __repr__(self):
         return self.__str__()
+
 
 def draw_humans(npimg, humans, imgcopy=False):
     if imgcopy:
@@ -236,27 +269,39 @@ def draw_humans(npimg, humans, imgcopy=False):
                 continue
 
             body_part = human.body_parts[i]
-            center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
+            center = (
+                int(body_part.x * image_w + 0.5),
+                int(body_part.y * image_h + 0.5),
+            )
             centers[i] = center
-            cv2.circle(npimg, center, 3, CocoColors[i], thickness=3, lineType=8, shift=0)
+            cv2.circle(
+                npimg, center, 3, CocoColors[i], thickness=3, lineType=8, shift=0
+            )
 
         # draw line
         for pair_order, pair in enumerate(CocoPairsRender):
-            if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
+            if (
+                pair[0] not in human.body_parts.keys()
+                or pair[1] not in human.body_parts.keys()
+            ):
                 continue
 
             # npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
-            cv2.line(npimg, centers[pair[0]], centers[pair[1]], CocoColors[pair_order], 3)
+            cv2.line(
+                npimg, centers[pair[0]], centers[pair[1]], CocoColors[pair_order], 3
+            )
 
     return npimg
-    
+
+
 class BodyPart:
     """
     part_idx : part index(eg. 0 for nose)
     x, y: coordinate of body part
     score : confidence score
     """
-    __slots__ = ('uidx', 'part_idx', 'x', 'y', 'score')
+
+    __slots__ = ("uidx", "part_idx", "x", "y", "score")
 
     def __init__(self, uidx, part_idx, x, y, score):
         self.uidx = uidx
@@ -268,20 +313,57 @@ class BodyPart:
         return CocoPart(self.part_idx)
 
     def __str__(self):
-        return 'BodyPart:%d-(%.2f, %.2f) score=%.2f' % (self.part_idx, self.x, self.y, self.score)
+        return "BodyPart:%d-(%.2f, %.2f) score=%.2f" % (
+            self.part_idx,
+            self.x,
+            self.y,
+            self.score,
+        )
 
     def __repr__(self):
         return self.__str__()
-        
-CocoColors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0], [0, 255, 0],
-              [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255], [85, 0, 255],
-              [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
-              
+
+
+CocoColors = [
+    [255, 0, 0],
+    [255, 85, 0],
+    [255, 170, 0],
+    [255, 255, 0],
+    [170, 255, 0],
+    [85, 255, 0],
+    [0, 255, 0],
+    [0, 255, 85],
+    [0, 255, 170],
+    [0, 255, 255],
+    [0, 170, 255],
+    [0, 85, 255],
+    [0, 0, 255],
+    [85, 0, 255],
+    [170, 0, 255],
+    [255, 0, 255],
+    [255, 0, 170],
+    [255, 0, 85],
+]
+
 CocoPairs = [
-    (1, 2), (1, 5), (2, 3), (3, 4), (5, 6), (6, 7), (1, 8), (8, 9), (9, 10), (1, 11),
-    (11, 12), (12, 13), (1, 0), (0, 14), (14, 16), (0, 15), (15, 17), (2, 16), (5, 17)
-]   # = 19
-CocoPairsRender = CocoPairs[:-2]            
-              
-              
-              
+    (1, 2),
+    (1, 5),
+    (2, 3),
+    (3, 4),
+    (5, 6),
+    (6, 7),
+    (1, 8),
+    (8, 9),
+    (9, 10),
+    (1, 11),
+    (11, 12),
+    (12, 13),
+    (1, 0),
+    (0, 14),
+    (14, 16),
+    (0, 15),
+    (15, 17),
+    (2, 16),
+    (5, 17),
+]  # = 19
+CocoPairsRender = CocoPairs[:-2]

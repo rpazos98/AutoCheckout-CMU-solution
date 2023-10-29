@@ -37,9 +37,7 @@ class CpsMongoClient:
 
     def aggregate(self, db_name, collection, pipeline):
         """Returns a cursor for the pipeline on the db and collection"""
-        return self.client[db_name][collection].aggregate(
-            pipeline, allowDiskUse=True
-        )
+        return self.client[db_name][collection].aggregate(pipeline, allowDiskUse=True)
 
     def list_products(self, db_name):
         """Lists all products"""
@@ -70,27 +68,13 @@ class CpsMongoClient:
     def find_first_after_time(self, db_name, collection, timestamp):
         """Find the next item in time after the given timestamp"""
         filt = {"$and": self.after("timestamp", timestamp)}
-        pipeline = [
-            {
-                "$match": filt
-            },
-            {
-                "$sort": {"timestamp": 1}
-            },
-            {
-                "$limit": 1
-            }
-        ]
+        pipeline = [{"$match": filt}, {"$sort": {"timestamp": 1}}, {"$limit": 1}]
         cursor = self.aggregate(db_name, collection, pipeline)
         return [DocObjectCodec.decode(doc, collection) for doc in cursor]
 
-    def find_all_between_time(
-        self, db_name, collection, timestamp_low, timestamp_high
-    ):
+    def find_all_between_time(self, db_name, collection, timestamp_low, timestamp_high):
         """Find all items in time between the given timestamps"""
-        filt = {"$and": self.between(
-            "timestamp", timestamp_low, timestamp_high
-        )}
+        filt = {"$and": self.between("timestamp", timestamp_low, timestamp_high)}
         cursor = self.find(db_name, collection, filt)
         return [DocObjectCodec.decode(doc, collection) for doc in cursor]
 
@@ -107,9 +91,7 @@ class CpsMongoClient:
     @property
     def test_cases(self):
         """Returns the set of locally loaded test cases"""
-        return set(self.client.list_database_names()).difference(
-            self.EXCLUDED_DBS
-        )
+        return set(self.client.list_database_names()).difference(self.EXCLUDED_DBS)
 
     def available_collections(self, db_name):
         """Returns list of all collections in the given db"""
@@ -122,10 +104,11 @@ class CpsMongoClient:
 
 class CpsApiClient:
     """Interfaces with the Cps API
-        The interface http://aifi.io/cpsweek/api/v1
-        will be enabled in 03/01/2020.
-        Before that it will return a "404 Page Not Found"
+    The interface http://aifi.io/cpsweek/api/v1
+    will be enabled in 03/01/2020.
+    Before that it will return a "404 Page Not Found"
     """
+
     def __init__(
         self,
         base_url="http://aifi.io/cpsweek/api/v1",
@@ -173,9 +156,7 @@ class CpsApiClient:
     # Result Operations
     def list_results(self, latest_only=True):
         """Lists results belonging to this user"""
-        return self._get(
-            url=f"{self.base_url}/results?latest_only={latest_only}"
-        )
+        return self._get(url=f"{self.base_url}/results?latest_only={latest_only}")
 
     def create_result(self, name, receipts):
         """Submits the results for the given test case"""
@@ -242,9 +223,7 @@ class TestCaseClient:
         if name in self.cps_mongo_client.test_cases:
             logger.info(f"Test case {name} is already loaded. Skipping it.")
             return
-        archive = path.join(
-            self.cps_api_client.download_dir, f"{name}.archive"
-        )
+        archive = path.join(self.cps_api_client.download_dir, f"{name}.archive")
         try:
             return self.cps_mongo_client.load_archive(archive)
         except FileNotFoundError:
@@ -271,31 +250,21 @@ class TestCaseClient:
 
     def find_product_facings(self, product_id):
         """Find all facings of a specific product ID"""
-        return self.cps_mongo_client.find_product_facings(
-            self.context, product_id
-        )
+        return self.cps_mongo_client.find_product_facings(self.context, product_id)
 
     def find_first_after_time(self, data_type, timestamp):
         """Find the next item in time after the given timestamp"""
-        if data_type not in self.cps_mongo_client.available_collections(
-            self.context
-        ):
-            logger.error(
-                f"Unknown data type {data_type} for case {self.context}"
-            )
+        if data_type not in self.cps_mongo_client.available_collections(self.context):
+            logger.error(f"Unknown data type {data_type} for case {self.context}")
             return None
         return self.cps_mongo_client.find_first_after_time(
-                self.context, data_type, timestamp
+            self.context, data_type, timestamp
         )
 
     def find_all_between_time(self, data_type, timestamp_low, timestamp_high):
-        if data_type not in self.cps_mongo_client.available_collections(
-            self.context
-        ):
-            logger.error(
-                f"Unknown data type {data_type} for case {self.context}"
-            )
+        if data_type not in self.cps_mongo_client.available_collections(self.context):
+            logger.error(f"Unknown data type {data_type} for case {self.context}")
             return None
         return self.cps_mongo_client.find_all_between_time(
-                self.context, data_type, timestamp_low, timestamp_high
+            self.context, data_type, timestamp_low, timestamp_high
         )

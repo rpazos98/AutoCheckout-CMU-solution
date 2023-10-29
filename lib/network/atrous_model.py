@@ -12,7 +12,6 @@ from torch.nn import init
 
 
 class BasicConv2d(nn.Module):
-
     def __init__(self, in_channels, out_channels, bn, **kwargs):
         super(BasicConv2d, self).__init__()
         self.bn = bn
@@ -28,20 +27,32 @@ class BasicConv2d(nn.Module):
 
 
 class InceptionA(nn.Module):
-
     def __init__(self, in_channels, pool_features, have_bn, have_bias):
         super(InceptionA, self).__init__()
-        self.branch1x1 = BasicConv2d(in_channels, 64, kernel_size=1, bn = have_bn, bias = have_bias)
+        self.branch1x1 = BasicConv2d(
+            in_channels, 64, kernel_size=1, bn=have_bn, bias=have_bias
+        )
 
-        self.branch5x5_1 = BasicConv2d(in_channels, 48, kernel_size=1,bn = have_bn,  bias = have_bias)
-        self.branch5x5_2 = BasicConv2d(48, 64, kernel_size=5, padding=2, bn = have_bn, bias = have_bias)
+        self.branch5x5_1 = BasicConv2d(
+            in_channels, 48, kernel_size=1, bn=have_bn, bias=have_bias
+        )
+        self.branch5x5_2 = BasicConv2d(
+            48, 64, kernel_size=5, padding=2, bn=have_bn, bias=have_bias
+        )
 
-        self.branch3x3dbl_1 = BasicConv2d(in_channels, 64, kernel_size=1, bn = have_bn, bias = have_bias)
-        self.branch3x3dbl_2 = BasicConv2d(64, 96, kernel_size=3, padding=1, bn = have_bn, bias = have_bias)
-        self.branch3x3dbl_3 = BasicConv2d(96, 96, kernel_size=3, padding=1, bn = have_bn, bias = have_bias)
+        self.branch3x3dbl_1 = BasicConv2d(
+            in_channels, 64, kernel_size=1, bn=have_bn, bias=have_bias
+        )
+        self.branch3x3dbl_2 = BasicConv2d(
+            64, 96, kernel_size=3, padding=1, bn=have_bn, bias=have_bias
+        )
+        self.branch3x3dbl_3 = BasicConv2d(
+            96, 96, kernel_size=3, padding=1, bn=have_bn, bias=have_bias
+        )
 
         self.branch_pool = BasicConv2d(
-            in_channels, pool_features, kernel_size=1, bn = have_bn, bias = have_bias)
+            in_channels, pool_features, kernel_size=1, bn=have_bn, bias=have_bias
+        )
 
     def forward(self, x):
         branch1x1 = self.branch1x1(x)
@@ -61,12 +72,24 @@ class InceptionA(nn.Module):
 
 
 class dilation_layer(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, padding='same_padding', dilation=1):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size=3,
+        padding="same_padding",
+        dilation=1,
+    ):
         super(dilation_layer, self).__init__()
-        if padding == 'same_padding':
+        if padding == "same_padding":
             padding = (kernel_size - 1) / 2 * dilation
-        self.Dconv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
-                               kernel_size=kernel_size, padding=padding, dilation=dilation)
+        self.Dconv = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            padding=padding,
+            dilation=dilation,
+        )
         self.Drelu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -80,17 +103,16 @@ class stage_block(nn.Module):
         super(stage_block, self).__init__()
         self.Dconv_1 = dilation_layer(in_channels, out_channels=64)
         self.Dconv_2 = dilation_layer(in_channels=64, out_channels=64)
-        self.Dconv_3 = dilation_layer(
-            in_channels=64, out_channels=64, dilation=2)
-        self.Dconv_4 = dilation_layer(
-            in_channels=64, out_channels=32, dilation=4)
-        self.Dconv_5 = dilation_layer(
-            in_channels=32, out_channels=32, dilation=8)
+        self.Dconv_3 = dilation_layer(in_channels=64, out_channels=64, dilation=2)
+        self.Dconv_4 = dilation_layer(in_channels=64, out_channels=32, dilation=4)
+        self.Dconv_5 = dilation_layer(in_channels=32, out_channels=32, dilation=8)
         self.Mconv_6 = nn.Conv2d(
-            in_channels=256, out_channels=128, kernel_size=1, padding=0)
+            in_channels=256, out_channels=128, kernel_size=1, padding=0
+        )
         self.Mrelu_6 = nn.ReLU(inplace=True)
         self.Mconv_7 = nn.Conv2d(
-            in_channels=128, out_channels=out_channels, kernel_size=1, padding=0)
+            in_channels=128, out_channels=out_channels, kernel_size=1, padding=0
+        )
 
     def forward(self, x):
         x_1 = self.Dconv_1(x)
@@ -111,20 +133,28 @@ class feature_extractor(nn.Module):
         print("loading layers from inception_v3...")
 
         self.conv1_3x3_s2 = BasicConv2d(
-            3, 32, kernel_size=3, stride=2, padding=1, bn = have_bn, bias = have_bias)
-            
+            3, 32, kernel_size=3, stride=2, padding=1, bn=have_bn, bias=have_bias
+        )
+
         self.conv2_3x3_s1 = BasicConv2d(
-            32, 32, kernel_size=3, stride=1, padding=1, bn = have_bn, bias = have_bias)
-            
+            32, 32, kernel_size=3, stride=1, padding=1, bn=have_bn, bias=have_bias
+        )
+
         self.conv3_3x3_s1 = BasicConv2d(
-            32, 64, kernel_size=3, stride=1, padding=1, bn = have_bn, bias = have_bias)
-            
+            32, 64, kernel_size=3, stride=1, padding=1, bn=have_bn, bias=have_bias
+        )
+
         self.conv4_3x3_reduce = BasicConv2d(
-            64, 80, kernel_size=1, stride=1, padding=1, bn = have_bn, bias = have_bias)
-        self.conv4_3x3 = BasicConv2d(80, 192, kernel_size=3, bn = have_bn,  bias = have_bias)
-        
-        self.inception_a1 = InceptionA(192, pool_features=32, have_bn = have_bn, have_bias =have_bias)
-        self.inception_a2 = InceptionA(256, pool_features=64, have_bn = have_bn, have_bias= have_bias)
+            64, 80, kernel_size=1, stride=1, padding=1, bn=have_bn, bias=have_bias
+        )
+        self.conv4_3x3 = BasicConv2d(80, 192, kernel_size=3, bn=have_bn, bias=have_bias)
+
+        self.inception_a1 = InceptionA(
+            192, pool_features=32, have_bn=have_bn, have_bias=have_bias
+        )
+        self.inception_a2 = InceptionA(
+            256, pool_features=64, have_bn=have_bn, have_bias=have_bias
+        )
 
     def forward(self, x):
         x = self.conv1_3x3_s2(x)
@@ -141,20 +171,31 @@ class feature_extractor(nn.Module):
 
 
 class Atrous_model(nn.Module):
-    def __init__(self, stages=5, have_bn = True, have_bias = False):
+    def __init__(self, stages=5, have_bn=True, have_bias=False):
         super(Atrous_model, self).__init__()
         self.stages = stages
-        self.feature_extractor = feature_extractor(have_bn = have_bn, have_bias=have_bias)
-        self.stage_0 = nn.Sequential(nn.Conv2d(in_channels=288, out_channels=256, kernel_size=3, padding=1),
-                                     nn.ReLU(inplace=True),
-                                     nn.Conv2d(
-                                         in_channels=256, out_channels=128, kernel_size=3, padding=1),
-                                     nn.ReLU(inplace=True))
+        self.feature_extractor = feature_extractor(have_bn=have_bn, have_bias=have_bias)
+        self.stage_0 = nn.Sequential(
+            nn.Conv2d(in_channels=288, out_channels=256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=256, out_channels=128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+        )
         for i in range(stages):
-            setattr(self, 'PAF_stage{}'.format(i + 2), stage_block(in_channels=128, out_channels=38) if i == 0 else
-                    stage_block(in_channels=185, out_channels=38))
-            setattr(self, 'heatmap_stage{}'.format(i + 2), stage_block(in_channels=128, out_channels=19) if i == 0 else
-                    stage_block(in_channels=185, out_channels=19))
+            setattr(
+                self,
+                "PAF_stage{}".format(i + 2),
+                stage_block(in_channels=128, out_channels=38)
+                if i == 0
+                else stage_block(in_channels=185, out_channels=38),
+            )
+            setattr(
+                self,
+                "heatmap_stage{}".format(i + 2),
+                stage_block(in_channels=128, out_channels=19)
+                if i == 0
+                else stage_block(in_channels=185, out_channels=19),
+            )
         self.init_weight()
 
     def forward(self, x):
@@ -163,9 +204,8 @@ class Atrous_model(nn.Module):
         x_in_0 = self.stage_0(x_in)
         x_in = x_in_0
         for i in range(self.stages):
-            x_PAF_pred = getattr(self, 'PAF_stage{}'.format(i + 2))(x_in)
-            x_heatmap_pred = getattr(
-                self, 'heatmap_stage{}'.format(i + 2))(x_in)
+            x_PAF_pred = getattr(self, "PAF_stage{}".format(i + 2))(x_in)
+            x_heatmap_pred = getattr(self, "heatmap_stage{}".format(i + 2))(x_in)
             saved_for_loss.append(x_PAF_pred)
             saved_for_loss.append(x_heatmap_pred)
             if i != self.stages - 1:
@@ -182,8 +222,9 @@ class Atrous_model(nn.Module):
                     init.constant(m.bias, 0.0)
 
     @staticmethod
-    def build_loss(saved_for_loss, heat_temp, heat_weight,
-                   vec_temp, vec_weight, batch_size, gpus):
+    def build_loss(
+        saved_for_loss, heat_temp, heat_weight, vec_temp, vec_weight, batch_size, gpus
+    ):
         names = build_names()
         saved_for_log = OrderedDict()
         criterion = nn.MSELoss(size_average=False).cuda()
@@ -218,8 +259,8 @@ class Atrous_model(nn.Module):
         return total_loss, saved_for_log
 
 
-def get_atrous_model(stages=5, have_bn= False, have_bias = True):
-    return Atrous_model(stages=stages, have_bn =have_bn, have_bias=have_bias)
+def get_atrous_model(stages=5, have_bn=False, have_bias=True):
+    return Atrous_model(stages=stages, have_bn=have_bn, have_bias=have_bias)
 
 
 def build_names():
@@ -227,26 +268,31 @@ def build_names():
 
     for j in range(1, 6):
         for k in range(1, 3):
-            names.append('loss_stage%d_L%d' % (j, k))
+            names.append("loss_stage%d_L%d" % (j, k))
     return names
- 
+
+
 """Load pretrained model on Imagenet
 :param model, the PyTorch nn.Module which will train.
 :param model_path, the directory which load the pretrained model, will download one if not have.               
-"""    
+"""
+
+
 def use_inception(model):
-    
-    url = 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth'
+
+    url = "https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth"
     incep_state_dict = model_zoo.load_url(url)
     incep_keys = incep_state_dict.keys()
-    
+
     # load weights of vgg
     weights_load = {}
     # weight+bias,weight+bias.....(repeat 10 times)
     for i in range(60):
-        weights_load[list(model.state_dict().keys())[i]] = incep_state_dict[list(incep_keys)[i]]
+        weights_load[list(model.state_dict().keys())[i]] = incep_state_dict[
+            list(incep_keys)[i]
+        ]
 
     state = model.state_dict()
     state.update(weights_load)
     model.load_state_dict(state)
-    print('load imagenet pretrained model')
+    print("load imagenet pretrained model")

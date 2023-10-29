@@ -63,14 +63,9 @@ class Facing(NamedTuple):
         Args:
             recorded (dict): The dict of a mongo doc
         """
-        plate_ids = [
-            PlateId.from_nested_dict(d)
-            for d in recorded.get("plate_ids", [])
-        ]
+        plate_ids = [PlateId.from_nested_dict(d) for d in recorded.get("plate_ids", [])]
         return cls(
-            product_id=ProductId.from_dict(
-                recorded.get("planogram_product_id", {})
-            ),
+            product_id=ProductId.from_dict(recorded.get("planogram_product_id", {})),
             plate_ids=plate_ids,
             coordinates=recorded.get("global_coordinates", {}),
         )
@@ -145,8 +140,7 @@ class Targets(NamedTuple):
             recorded (dict): The dict of a mongo doc
         """
         targets = [
-            Target.from_dict(d)
-            for d in recorded["document"]["targets"]["targets"]
+            Target.from_dict(d) for d in recorded["document"]["targets"]["targets"]
         ]
         return cls(
             timestamp=recorded["timestamp"],
@@ -201,18 +195,20 @@ class DepthFrame(NamedTuple):
         frames = doc["frame_message"]["frames"]
         depth = np.empty()
         for frame in frames:
-            _type = frame['frame_source']['camera_id']['camera_type']
+            _type = frame["frame_source"]["camera_id"]["camera_type"]
             if _type == "DEPTH":
-                depth = NumpyRecordCodec.decode(
-                    frame["frame"]["data"],
-                    frame["frame"]["shape"],
-                    frame["frame"]["type"],
-                ),
+                depth = (
+                    NumpyRecordCodec.decode(
+                        frame["frame"]["data"],
+                        frame["frame"]["shape"],
+                        frame["frame"]["type"],
+                    ),
+                )
                 break
         return cls(
             timestamp=recorded["timestamp"],
             camera_id=recorded["camera_id"],
-            frame=depth
+            frame=depth,
         )
 
 
@@ -232,16 +228,14 @@ class RGBFrame(NamedTuple):
         """
         doc = recorded["document"]
         frames = doc["frame_message"]["frames"]
-        rgb = b''
+        rgb = b""
         for frame in frames:
             # _type = frame['frame_source']['camera_id']['camera_type']
             # if _type == "RGB":
-            rgb = b64decode(frame["frame"]['data'])
+            rgb = b64decode(frame["frame"]["data"])
             # break
         return cls(
-            timestamp=recorded["timestamp"],
-            camera_id=recorded["camera_id"],
-            frame=rgb
+            timestamp=recorded["timestamp"], camera_id=recorded["camera_id"], frame=rgb
         )
 
 

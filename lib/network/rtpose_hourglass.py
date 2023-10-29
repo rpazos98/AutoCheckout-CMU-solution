@@ -6,6 +6,8 @@ from collections import OrderedDict
 
 NUM_JOINTS = 18
 NUM_LIMBS = 38
+
+
 class Bottleneck(nn.Module):
     expansion = 2
 
@@ -15,8 +17,9 @@ class Bottleneck(nn.Module):
         self.bn1 = nn.BatchNorm2d(inplanes)
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=True)
         self.bn2 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=True)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=stride, padding=1, bias=True
+        )
         self.bn3 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 2, kernel_size=1, bias=True)
         self.relu = nn.ReLU(inplace=True)
@@ -90,16 +93,24 @@ class Hourglass(nn.Module):
 
 
 class HourglassNet(nn.Module):
-    '''Hourglass model from Newell et al ECCV 2016'''
+    """Hourglass model from Newell et al ECCV 2016"""
 
-    def __init__(self, block, num_stacks=2, num_blocks=4, paf_classes=NUM_LIMBS*2, ht_classes=NUM_JOINTS+1):
+    def __init__(
+        self,
+        block,
+        num_stacks=2,
+        num_blocks=4,
+        paf_classes=NUM_LIMBS * 2,
+        ht_classes=NUM_JOINTS + 1,
+    ):
         super(HourglassNet, self).__init__()
 
         self.inplanes = 64
         self.num_feats = 128
         self.num_stacks = num_stacks
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=True)
+        self.conv1 = nn.Conv2d(
+            3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=True
+        )
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_residual(block, self.inplanes, 1)
@@ -109,37 +120,48 @@ class HourglassNet(nn.Module):
 
         # build hourglass modules
         ch = self.num_feats * block.expansion
-        hg, res, fc, score_paf, score_ht, fc_, paf_score_, ht_score_ = \
-        [], [], [], [], [], [], [], []
+        hg, res, fc, score_paf, score_ht, fc_, paf_score_, ht_score_ = (
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
         for i in range(num_stacks):
             hg.append(Hourglass(block, num_blocks, self.num_feats, 4))
             res.append(self._make_residual(block, self.num_feats, num_blocks))
             fc.append(self._make_fc(ch, ch))
             score_paf.append(nn.Conv2d(ch, paf_classes, kernel_size=1, bias=True))
-            score_ht.append(nn.Conv2d(ch, ht_classes, kernel_size=1, bias=True))            
+            score_ht.append(nn.Conv2d(ch, ht_classes, kernel_size=1, bias=True))
             if i < num_stacks - 1:
                 fc_.append(nn.Conv2d(ch, ch, kernel_size=1, bias=True))
-                paf_score_.append(nn.Conv2d(paf_classes, ch,
-                                        kernel_size=1, bias=True))
-                ht_score_.append(nn.Conv2d(ht_classes, ch,
-                                        kernel_size=1, bias=True))                                        
+                paf_score_.append(nn.Conv2d(paf_classes, ch, kernel_size=1, bias=True))
+                ht_score_.append(nn.Conv2d(ht_classes, ch, kernel_size=1, bias=True))
         self.hg = nn.ModuleList(hg)
         self.res = nn.ModuleList(res)
         self.fc = nn.ModuleList(fc)
         self.score_ht = nn.ModuleList(score_ht)
-        self.score_paf = nn.ModuleList(score_paf)        
+        self.score_paf = nn.ModuleList(score_paf)
         self.fc_ = nn.ModuleList(fc_)
         self.paf_score_ = nn.ModuleList(paf_score_)
         self.ht_score_ = nn.ModuleList(ht_score_)
-        
-        self._initialize_weights_norm()        
-        
+
+        self._initialize_weights_norm()
+
     def _make_residual(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=True),
+                nn.Conv2d(
+                    self.inplanes,
+                    planes * block.expansion,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=True,
+                ),
             )
 
         layers = []
@@ -160,7 +182,7 @@ class HourglassNet(nn.Module):
         )
 
     def forward(self, x):
-        saved_for_loss = []    
+        saved_for_loss = []
         out = []
         x = self.conv1(x)
         x = self.bn1(x)
@@ -176,30 +198,35 @@ class HourglassNet(nn.Module):
             y = self.res[i](y)
             y = self.fc[i](y)
             score_paf = self.score_paf[i](y)
-            score_ht = self.score_ht[i](y)            
+            score_ht = self.score_ht[i](y)
             if i < self.num_stacks - 1:
                 fc_ = self.fc_[i](y)
                 paf_score_ = self.paf_score_[i](score_paf)
-                ht_score_ = self.ht_score_[i](score_ht)                
+                ht_score_ = self.ht_score_[i](score_ht)
                 x = x + fc_ + paf_score_ + ht_score_
-                
+
         saved_for_loss.append(score_paf)
         saved_for_loss.append(score_ht)
 
         return (score_paf, score_ht), saved_for_loss
 
-    def _initialize_weights_norm(self):        
-       for m in self.modules():
+    def _initialize_weights_norm(self):
+        for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 init.normal_(m.weight, std=0.01)
                 if m.bias is not None:  # mobilenet conv2d doesn't add bias
-                    init.constant_(m.bias, 0.0) 
+                    init.constant_(m.bias, 0.0)
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
+
 def hg(**kwargs):
-    model = HourglassNet(Bottleneck, num_stacks=kwargs['num_stacks'], 
-    num_blocks=kwargs['num_blocks'], paf_classes=kwargs['paf_classes'], 
-    ht_classes=kwargs['ht_classes'])
+    model = HourglassNet(
+        Bottleneck,
+        num_stacks=kwargs["num_stacks"],
+        num_blocks=kwargs["num_blocks"],
+        paf_classes=kwargs["paf_classes"],
+        ht_classes=kwargs["ht_classes"],
+    )
     return model
