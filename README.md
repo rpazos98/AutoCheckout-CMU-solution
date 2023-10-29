@@ -1,84 +1,84 @@
-# MPS: Multi-Person Shopping for Cashier-Less Store
-This project shares our solution for AiFi's CPS-IoT Autocheckout [Competition](https://www.aifi.io/research). `We're the winner: Team 3!`
-- Authors: [Yixin Bao](https://www.linkedin.com/in/yixinbao/), [Xinyue Cao](https://www.linkedin.com/in/xinyuecao/), [Chenghui Li](https://www.linkedin.com/in/leochli/), [Mengmeng Zhang](https://www.linkedin.com/in/zhangmengmeng/)
-- Affiliation: Carnegie Mellon University, U.S.
+# Autocheckout update
 
-## Demo
-![demo](competition/Team99x2.5.gif)
+This project is based on the [winning solution](https://github.com/AutoCheckout-CMU/AutoCheckout) from the competition created by AiFi. The intent is to 
+
+- improve the code structure
+- incorporate better engineering tools and practices
+- investigate and propose a solution based on computer vision
+
+## Description
+
+This project is being developed in the context of the graduation project of the 
+[AI Specialization](https://lse.posgrados.fi.uba.ar/posgrados/especializaciones/inteligencia-artificial) offered by the 
+University of Buenos Aires.
+
+It is based on a prior solution to the problem, and it aims to solve the scenarios that the original solution was not 
+able to solve (see [results evaluation](evaluation.md)).
+
+At the same time there is a lot of effort in improving the code and engineering practices and tooling. The objective is 
+to make the project easy to execute and replicate
+
+## Getting started
+
+Follow these steps to run the project locally.
+
+### Pre-requisites
+
+#### Data Download
+
+Download files from the [competition repo](https://github.com/JoaoDiogoFalcao/AutoCheckout/blob/master/README.md). 
+Save as many as you want in `data/downloads`
+
+#### docker-compose
+
+Get the docker-compose images running, using `docker-compose up -d`
+
+#### Mongo Compass (optional)
+
+[Install](https://www.mongodb.com/try/download/compass) the UI tooling to monitor the data being properly restored in 
+your db.
+
+Connect to the database that was brought up in the last step using `mongodb://localhost:27017` as connection string
+
+#### Install mongo tooling
+
+Find [here](https://www.mongodb.com/try/download/database-tools) the version for your machine. This set of tools
+contains mongorestore, which will be used in the next step
+
+#### Use mongorestore
+
+Execute this command, changing the archive name as corresponding
+
+`mongorestore --archive=./data/downloads/<db-name>.archive --host localhost --port 27017`
+
+#### Prepare Env
+
+First you need to have [Conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) installed.
+
+Then you must execute `conda env create -f environment.yml` to replicate the `AutoCheckout` environment locally.
+
+To activate the environment you need to execute `conda activate AutoCheckout`
+
+After that you should execute `pip install -r requirementst.txt` to make sure all dependencies are installed.
+
+## Executing the program
+
+The entry point to the program is the `evalution.py` script. After the execution a report will appear in the terminal
+showing relevant information of the execution
+
 ```
-============= Our Predicted Receipt  =============
-Customer ID: 14322669897997084492
+Evaluating database:  cps-test-2
+Capture 3 events in the database cps-test-2
+==============================================================
+Predicted: [084114115881][putback=0] Kettle Chips Jalapeno, weight=62g, count=1
+Predicted: [042238722149][putback=0] Haribo Starmix, weight=148g, count=1
+Predicted: [632565000029][putback=0] FIJI NATURAL WATER 1LTR, weight=1059g, count=1
+Database: cps-test-2, Correct Items on Receipts: 2/3, Total GT items: 3
 
-Purchase List: 
-9 x Boomchickapop Sweet & Salty Kettle Corn
-6 x Boomchickapop Sea Salt Popcorn
-6 x Skinnypop Popcorn
-
-F1-score: 97.6%
+================== Evaluation Summary ==================
+Databases:  ['cps-test-2']
+Ground truth version:  ground_truth/v14.json
+Overall precision is: 66.7%
+Overall recall is: 66.7%
+Overall F1 is: 66.7%
 ```
-
-## Installation
-- Install and start [mongodb](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/) in order to store the test case data
-```
-sudo systemctl start mongod
-```
-- Install dependencies
-```
-pip3 install -r requirements.txt
-```
-
-## Sample Data
-
-- Download Videos [Here](https://storage.googleapis.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/cps-test-01/cps-test-videos.gz) (17.1MB)
-
-- Download Data without Depth Images [Here](https://storage.googleapis.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/cps-test-01/cps-test-01-nodepth.archive) (239MB)
-
-- Download Data with Depth Images [Here](https://storage.googleapis.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/cps-test-01/cps-test-01-all.archive) (2.0GB)
-
-- The complete public datasets available at http://aifi.io/research under Sample Data.
-
-- To import the data into mongodb: 
-```
-mongorestore --archive="cps-test-01-nodepth.archive"
-```
-
-## Get started
-To test one single testcase:
-```python
-python3 test.py
-```
-To get more detaild log, change in `config.py`:
-```bash
-VERBOSE = 1
-```
-To test it against the competition API:
-```
-python3 submit.py
-```
-
-## Ground truth
-For most of testcases in public dataset and the competition datast, we have manually labeled the [ground truth](https://github.com/AutoCheckout-CMU/AutoCheckout/tree/master/ground_truth). 
-
-To get a F1-score out of the ground truth, modify the main function in `evaluation.py` to include your target database, then:
-
-```
-python3 evaluation.py
-```
-## Documentation & Benchmark Results
-If you're interested in our methodologies and benchmark results, please refer to our
-[Report](https://github.com/AutoCheckout-CMU/AutoCheckout/tree/master/doc/Multi_Person_Shopping.pdf).
-
-## Our team
-![team3](competition/team3.gif)
-
-## Citing MPS
-If you use MPS in your research or wish to refer to the baseline results published in [Report](https://github.com/AutoCheckout-CMU/AutoCheckout/tree/master/doc/Multi_Person_Shopping.pdf), please use the following BibTeX entry.
-
-```BibTeX
-@unpublished{MPS2020,
-  author = {Yixin Bao, Xinyue Cao, Chenghui Li, Mengmeng Zhang},
-  title = {Multi-Person Shopping (MPS) for Cashier-Less Store},
-  school = {Carnegie Mellon University},
-  year = {2020},
-  note = {Unpublished: https://github.com/AutoCheckout-CMU/AutoCheckout}
-}
