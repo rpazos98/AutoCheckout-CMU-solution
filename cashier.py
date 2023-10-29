@@ -60,7 +60,7 @@ class CustomerReceipt:
 Cashier class to generate receipts
 """
 
-SHOULD_GRAPH = True
+SHOULD_GRAPH = False
 
 
 class Cashier:
