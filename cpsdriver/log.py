@@ -8,7 +8,7 @@ LOG_LEVELS = {
     "info": logging.INFO,
     "warning": logging.WARNING,
     "error": logging.ERROR,
-    "critical": logging.CRITICAL
+    "critical": logging.CRITICAL,
 }
 
 
@@ -18,7 +18,7 @@ def setup_logger(level):
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     handler.setFormatter(formatter)
     ROOT_LOGGER.addHandler(handler)

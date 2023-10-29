@@ -12,8 +12,10 @@ from WeightTrigger import WeightTrigger as WT
 from config import *
 from cpsdriver.codec import Targets
 from utils import *
+
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
 from viz_utils import VizUtils
+
 # import cv2
 # import mediapipe as mp
 
@@ -21,7 +23,7 @@ PUTBACK_JITTER_RATE = 0.75
 GRAB_FROM_SHELF_JITTER_RATE = 0.4
 
 
-class CustomerReceipt():
+class CustomerReceipt:
     """
     checkIn/Out (datetime): time when customer enters/leaves the store
     customerID (String): identify of each customer
@@ -61,7 +63,7 @@ Cashier class to generate receipts
 SHOULD_GRAPH = True
 
 
-class Cashier():
+class Cashier:
     def __init__(self):
         pass
 
@@ -69,10 +71,15 @@ class Cashier():
         myBK = BK.BookKeeper(dbName)
         weightTrigger = WT(myBK)
 
-        weight_shelf_mean, weight_shelf_std, weight_plate_mean, weight_plate_std = weightTrigger.get_moving_weight()
+        (
+            weight_shelf_mean,
+            weight_shelf_std,
+            weight_plate_mean,
+            weight_plate_std,
+        ) = weightTrigger.get_moving_weight()
 
         number_gondolas = len(weight_shelf_mean)
-        # reduce timestamp 
+        # reduce timestamp
         timestamps = weightTrigger.get_agg_timestamps()
         for i in range(number_gondolas):
             timestamps[i] = timestamps[i][30:-29]
@@ -80,22 +87,32 @@ class Cashier():
         # sanity check
         for i in range(number_gondolas):
             timestamps_count = len(timestamps[i])
-            assert (timestamps_count == weight_shelf_mean[i].shape[1])
-            assert (timestamps_count == weight_shelf_std[i].shape[1])
-            assert (timestamps_count == weight_plate_mean[i].shape[2])
-            assert (timestamps_count == weight_plate_std[i].shape[2])
+            assert timestamps_count == weight_shelf_mean[i].shape[1]
+            assert timestamps_count == weight_shelf_std[i].shape[1]
+            assert timestamps_count == weight_plate_mean[i].shape[2]
+            assert timestamps_count == weight_plate_std[i].shape[2]
 
-
-        events = weightTrigger.detect_weight_events(weight_shelf_mean, weight_shelf_std, weight_plate_mean,
-                                                    weight_plate_std, timestamps)
+        events = weightTrigger.detect_weight_events(
+            weight_shelf_mean,
+            weight_shelf_std,
+            weight_plate_mean,
+            weight_plate_std,
+            timestamps,
+        )
         events = weightTrigger.splitEvents(events)
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
 
-        viz = VizUtils(events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, myBK)
+        viz = VizUtils(
+            events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, myBK
+        )
 
         if SHOULD_GRAPH:
-            graph_weight_shelf_data(events, weight_shelf_mean, timestamps, dbName, "Weight Shelf Mean")
-            graph_weight_shelf_data(events, weight_shelf_std, timestamps, dbName, "Weight Shelf Standard")
+            graph_weight_shelf_data(
+                events, weight_shelf_mean, timestamps, dbName, "Weight Shelf Mean"
+            )
+            graph_weight_shelf_data(
+                events, weight_shelf_std, timestamps, dbName, "Weight Shelf Standard"
+            )
             # graph_weight_plate_data(events, weight_plate_mean, timestamps, dbName, "Weight Plate Mean")
             # graph_weight_plate_data(events, weight_plate_std, timestamps, dbName, "Weight Plate Standard")
 
@@ -107,7 +124,7 @@ class Cashier():
         for event in events:
             if VERBOSE:
                 print("----------------")
-                print('Event: ', event)
+                print("Event: ", event)
 
             ################################ Naive Association ################################
 
@@ -123,7 +140,7 @@ class Cashier():
                     receipts[target_id] = customer_receipt
 
             # No target for the event found at all
-            if (len(targets) == 0):
+            if len(targets) == 0:
                 continue
 
             if ASSOCIATION_TYPE == CE_ASSOCIATION:
@@ -143,7 +160,9 @@ class Cashier():
                 if target_id not in receipts:
                     continue
                 customer_receipt = receipts[target_id]
-                purchase_list = customer_receipt.purchaseList  # productID -> (product, num_product)
+                purchase_list = (
+                    customer_receipt.purchaseList
+                )  # productID -> (product, num_product)
 
                 # find most possible putback product whose weight is closest to the event weight
                 candidate_products = []
@@ -152,14 +171,16 @@ class Cashier():
                     for count in range(1, num_product + 1):
                         candidate_products.append((product, count))
 
-                if (len(candidate_products) == 0):
+                if len(candidate_products) == 0:
                     continue
                 # item = (product, count)
-                candidate_products.sort(key=lambda item: abs(item[0].weight * item[1] - event.deltaWeight))
+                candidate_products.sort(
+                    key=lambda item: abs(item[0].weight * item[1] - event.deltaWeight)
+                )
                 product, putback_count = candidate_products[0]
 
                 # If weight difference is too large, ignore this event
-                if (abs(event.deltaWeight) < PUTBACK_JITTER_RATE * product.weight):
+                if abs(event.deltaWeight) < PUTBACK_JITTER_RATE * product.weight:
                     continue
 
                 # Put the product on the shelf will affect planogram
@@ -177,7 +198,10 @@ class Cashier():
                 product = topProductExtended
 
                 # If deltaWeight is too small compared to the predicted product, ignore this event
-                if (abs(event.deltaWeight) < GRAB_FROM_SHELF_JITTER_RATE * product.weight):
+                if (
+                    abs(event.deltaWeight)
+                    < GRAB_FROM_SHELF_JITTER_RATE * product.weight
+                ):
                     continue
             productID = product.barcode
 
@@ -194,28 +218,55 @@ class Cashier():
                 # Putback count from previous step
                 pred_quantity = putback_count
                 if DEBUG:
-                    customer_receipt.purchase(product,
-                                              pred_quantity)  # In the evaluation code, putback is still an event, so we accumulate for debug purpose
+                    customer_receipt.purchase(
+                        product, pred_quantity
+                    )  # In the evaluation code, putback is still an event, so we accumulate for debug purpose
                 else:
                     customer_receipt.putback(product, pred_quantity)
             else:
                 # Predict quantity from delta weight
-                pred_quantity = max(int(round(abs(event.deltaWeight / product.weight))), 1)
+                pred_quantity = max(
+                    int(round(abs(event.deltaWeight / product.weight))), 1
+                )
                 customer_receipt.purchase(product, pred_quantity)
             if VIZ:
-                viz.addEventProduct(event, {"name": product.name, "quantity": pred_quantity, "weight": product.weight})
+                viz.addEventProduct(
+                    event,
+                    {
+                        "name": product.name,
+                        "quantity": pred_quantity,
+                        "weight": product.weight,
+                    },
+                )
 
             if VERBOSE:
-                print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s" % (
-                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity, product.thumbnail))
+                print(
+                    "Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s"
+                    % (
+                        product.barcode,
+                        isPutbackEvent,
+                        product.name,
+                        product.weight,
+                        pred_quantity,
+                        product.thumbnail,
+                    )
+                )
             else:
-                print("Predicted: [%s][putback=%d] %s, weight=%dg, count=%d" % (
-                    product.barcode, isPutbackEvent, product.name, product.weight, pred_quantity))
+                print(
+                    "Predicted: [%s][putback=%d] %s, weight=%dg, count=%d"
+                    % (
+                        product.barcode,
+                        isPutbackEvent,
+                        product.name,
+                        product.weight,
+                        pred_quantity,
+                    )
+                )
 
         ################ Display all receipts ################
         if VERBOSE:
             num_receipt = 0
-            if (len(receipts) == 0):
+            if len(receipts) == 0:
                 print("No receipts!")
                 return {}
 
@@ -225,27 +276,31 @@ class Cashier():
                 print("Purchase List: ")
                 for _, entry in customer_receipt.purchaseList.items():
                     product, quantity = entry
-                    print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail,
-                          product.barcode)
+                    print(
+                        "*Name: " + product.name + ", Quantities: " + str(quantity),
+                        product.thumbnail,
+                        product.barcode,
+                    )
                 num_receipt += 1
-if VIZ:
-            viz.graph()
+            if VIZ:
+                viz.graph()
         return receipts
 
 
 class VideoCashier:
-
     def __init__(self, db_name):
         self.db_name = db_name
         self.myBK = BK.BookKeeper(db_name)
         self.db = self.myBK.db
-        self.crop_dict = {"192.168.1.100_": {"x1": 1200, "y1": 0, "x2": 1740, "y2": 500},
-                          "192.168.1.101_": {"x1": 500, "y1": 0, "x2": 1140, "y2": 460},
-                          "192.168.1.102_": {"x1": 1390, "y1": 0, "x2": 2150, "y2": 926},
-                          "192.168.1.103_": {"x1": 630, "y1": 0, "x2": 1366, "y2": 1062},
-                          "192.168.1.107_": {"x1": 1096, "y1": 600, "x2": 2362, "y2": 1516},
-                          "192.168.1.109_": {"x1": 670, "y1": 626, "x2": 1530, "y2": 1518},
-                          "192.168.1.110_": {"x1": 68, "y1": 740, "x2": 1142, "y2": 1514}}
+        self.crop_dict = {
+            "192.168.1.100_": {"x1": 1200, "y1": 0, "x2": 1740, "y2": 500},
+            "192.168.1.101_": {"x1": 500, "y1": 0, "x2": 1140, "y2": 460},
+            "192.168.1.102_": {"x1": 1390, "y1": 0, "x2": 2150, "y2": 926},
+            "192.168.1.103_": {"x1": 630, "y1": 0, "x2": 1366, "y2": 1062},
+            "192.168.1.107_": {"x1": 1096, "y1": 600, "x2": 2362, "y2": 1516},
+            "192.168.1.109_": {"x1": 670, "y1": 626, "x2": 1530, "y2": 1518},
+            "192.168.1.110_": {"x1": 68, "y1": 740, "x2": 1142, "y2": 1514},
+        }
 
     def process(self):
         target_id_to_store_exit_time = self.get_store_exit_time()
@@ -254,7 +309,7 @@ class VideoCashier:
 
     def get_store_exit_time(self):
         result = {}
-        targets = self.db['full_targets']
+        targets = self.db["full_targets"]
         for item in targets.find():
             if item["document"]["targets"]:
                 in_memory_targets = Targets.from_dict(item)

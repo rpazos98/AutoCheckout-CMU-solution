@@ -82,3 +82,11 @@ Overall precision is: 66.7%
 Overall recall is: 66.7%
 Overall F1 is: 66.7%
 ```
+
+## Housekeeping
+
+### Formatter
+
+For this project we are using the Black formatter.
+
+To format your code with it just type in 

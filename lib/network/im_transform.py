@@ -5,16 +5,17 @@ import cv2
 def resize(frame, desired_size):
     old_size = frame.shape[:2]
     ratio = float(desired_size) / max(old_size)
-    new_size = tuple([int(x*ratio) for x in old_size])
+    new_size = tuple([int(x * ratio) for x in old_size])
 
     frame = cv2.resize(frame, (new_size[1], new_size[0]))
     delta_w = desired_size - new_size[1]
     delta_h = desired_size - new_size[0]
-    top, bottom = delta_h//2, delta_h-(delta_h//2)
-    left, right = delta_w//2, delta_w-(delta_w//2)
+    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
+    left, right = delta_w // 2, delta_w - (delta_w // 2)
     color = [0, 0, 0]
     frame = cv2.copyMakeBorder(
-        frame, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+        frame, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color
+    )
 
     if left == 0:
         scale = float(old_size[1]) / desired_size
@@ -23,7 +24,7 @@ def resize(frame, desired_size):
     return frame, left, top, scale
 
 
-def imcv2_recolor(im, a=.1):
+def imcv2_recolor(im, a=0.1):
     # t = [np.random.uniform()]
     # t += [np.random.uniform()]
     # t += [np.random.uniform()]
@@ -32,10 +33,10 @@ def imcv2_recolor(im, a=.1):
 
     # random amplify each channel
     im = im.astype(np.float)
-    im *= (1 + t * a)
-    mx = 255. * (1 + a)
+    im *= 1 + t * a
+    mx = 255.0 * (1 + a)
     up = np.random.uniform(-1, 1)
-    im = np.power(im / mx, 1. + up * .5)
+    im = np.power(im / mx, 1.0 + up * 0.5)
     # return np.array(im * 255., np.uint8)
     return im
 
@@ -43,12 +44,12 @@ def imcv2_recolor(im, a=.1):
 def imcv2_affine_trans(im, flip=None, im_shape=None, rotate=False, max_scale=1.5):
     # Scale and translate
     h, w = im.shape[:2] if im_shape is None else im_shape[:2]
-    scale = np.random.uniform(1., max_scale)
+    scale = np.random.uniform(1.0, max_scale)
 
     degree = np.random.uniform(-5, 5) if rotate else None
 
-    max_offx = (scale - 1.) * w
-    max_offy = (scale - 1.) * h
+    max_offx = (scale - 1.0) * w
+    max_offy = (scale - 1.0) * h
     offx = int(np.random.uniform() * max_offx)
     offy = int(np.random.uniform() * max_offy)
 
@@ -68,7 +69,7 @@ def apply_affine(im, scale, offs, flip, im_shape=None):
     if degree is not None:
         retval = cv2.getRotationMatrix2D((w // 2, h // 2), degree, 1)
         im = cv2.warpAffine(im, retval, (w, h))
-    im = im[offy: (offy + h), offx: (offx + w)]
+    im = im[offy : (offy + h), offx : (offx + w)]
     if flip:
         im = cv2.flip(im, 1)
 
@@ -132,4 +133,3 @@ def crop_with_factor(im, dest_size=None, factor=32, is_ceil=True):
     im_croped[0:h, 0:w, :] = im
 
     return im_croped, im_scale, im.shape
-    

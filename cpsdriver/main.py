@@ -30,9 +30,7 @@ def generate_receipts(test_client):
     logger.info(f"An example product is {products[-1]}")
     facings = test_client.find_product_facings(products[-1].product_id)
     logger.info(f"The facings of it are {facings}")
-    logger.info(
-        f"Valid data types for this sample are {test_client.valid_data_types}"
-    )
+    logger.info(f"Valid data types for this sample are {test_client.valid_data_types}")
     example_types = ["depth", "targets", "plate_data", "frame_message"]
     for _type in example_types:
         example = test_client.find_first_after_time(_type, 0.0)

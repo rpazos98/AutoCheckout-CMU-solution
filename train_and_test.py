@@ -2,13 +2,24 @@ import os
 
 from detecto.core import Dataset, Model, DataLoader
 from detecto.utils import read_image
-from detecto.visualize import show_labeled_image, plot_prediction_grid, detect_video, detect_live
+from detecto.visualize import (
+    show_labeled_image,
+    plot_prediction_grid,
+    detect_video,
+    detect_live,
+)
 from matplotlib import pyplot as plt
 
-TRAIN_ROOT = 'product-dataset/created/train'
-TEST_ROOT = 'product-dataset/created/test'
-MODEL_PATH = 'model_weights.pth'
-LABELS = ["818780014229", "071063437553", "818780014243", "078907420108", "012000028458"]
+TRAIN_ROOT = "product-dataset/created/train"
+TEST_ROOT = "product-dataset/created/test"
+MODEL_PATH = "model_weights.pth"
+LABELS = [
+    "818780014229",
+    "071063437553",
+    "818780014243",
+    "078907420108",
+    "012000028458",
+]
 
 
 def main():
@@ -18,7 +29,7 @@ def main():
     train = DataLoader(train, batch_size=10, shuffle=True)
 
     for image, targets in test:
-        show_labeled_image(image, targets['boxes'], targets['labels'])
+        show_labeled_image(image, targets["boxes"], targets["labels"])
 
     if not os.path.isfile(MODEL_PATH):
         model = Model(LABELS)
@@ -34,5 +45,5 @@ def main():
     show_labeled_image(image, boxes, labels)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

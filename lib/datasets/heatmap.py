@@ -32,5 +32,5 @@ def putGaussianMaps(center, accumulate_confid_map, sigma, grid_y, grid_x, stride
     cofid_map = np.multiply(mask, cofid_map)
     accumulate_confid_map += cofid_map
     accumulate_confid_map[accumulate_confid_map > 1.0] = 1.0
-    
+
     return accumulate_confid_map

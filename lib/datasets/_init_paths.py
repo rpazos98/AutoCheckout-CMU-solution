@@ -10,5 +10,5 @@ def add_path(path):
 this_dir = osp.abspath(osp.dirname(__file__))
 
 # Add Framework to PYTHONPATH
-lib_path = osp.join(this_dir, '..')
+lib_path = osp.join(this_dir, "..")
 add_path(lib_path)

@@ -25,7 +25,7 @@ def putVecMaps(centerA, centerB, accumulate_vec_map, count, grid_y, grid_x, stri
 
     limb_vec = centerB - centerA
     norm = np.linalg.norm(limb_vec)
-    if (norm == 0.0):
+    if norm == 0.0:
         # print 'limb is too short, ignore it...'
         return accumulate_vec_map, count
     limb_vec_unit = limb_vec / norm
@@ -51,10 +51,10 @@ def putVecMaps(centerA, centerB, accumulate_vec_map, count, grid_y, grid_x, stri
     vec_map[yy, xx] *= limb_vec_unit[np.newaxis, np.newaxis, :]
 
     mask = np.logical_or.reduce(
-        (np.abs(vec_map[:, :, 0]) > 0, np.abs(vec_map[:, :, 1]) > 0))
+        (np.abs(vec_map[:, :, 0]) > 0, np.abs(vec_map[:, :, 1]) > 0)
+    )
 
-    accumulate_vec_map = np.multiply(
-        accumulate_vec_map, count[:, :, np.newaxis])
+    accumulate_vec_map = np.multiply(accumulate_vec_map, count[:, :, np.newaxis])
     accumulate_vec_map += vec_map
     count[mask == True] += 1
 
