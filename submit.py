@@ -1,4 +1,4 @@
-from cashier import Cashier
+from cashier import Cashier, VideoCashier
 import subprocess
 import json
 import os
@@ -6,7 +6,7 @@ from pprint import pprint
 
 
 def output_json(db_id, user, receipts, path):
-    print ('=======================')
+    print('=======================')
     output = {}
     output['testcase'] = db_id
     output['user'] = user
@@ -35,9 +35,10 @@ def output_json(db_id, user, receipts, path):
     with open(path, 'w') as outfile:
         json.dump(output, outfile)
 
+
 def generate_output():
     # Load JSON
-    f = open('competition/test_cases.json')
+    f = open('competition/test_cases_specific.json')
 
     test_cases = json.load(f)
     myCashier = Cashier()
@@ -48,11 +49,14 @@ def generate_output():
         dbName = test_db['name']
         dbId = test_db['uuid']
         receipts = myCashier.process(dbName)
+        myVideoCashier = VideoCashier(db_name=dbName)
+        video_receipts = myVideoCashier.process()
         # Generate output file
         path = "outputs/output-{}.json".format(dbName)
         output_paths.append(path)
         output_json(dbId, userID, receipts, path=path)
     return output_paths
+
 
 def cal_avg(scores):
     if (len(scores) == 0):
@@ -62,6 +66,7 @@ def cal_avg(scores):
         total += score
     return total / len(scores)
 
+
 def get_score(output_paths=['outputs/output-BASELINE-1.json']):
     # Send a POST Request
     # command_line = [
@@ -70,7 +75,8 @@ def get_score(output_paths=['outputs/output-BASELINE-1.json']):
     #     '--header', '\'Content-Type: application/json\'',\
     #     '--data-raw'
     # ]
-    pre_cmd = 'curl --location --request POST \'cps-week.internal.aifi.io/api/v1/results\' --header \'TOKEN: 5ea023be-b530-4816-8eda-5340cfabe9b0\' --header \'Content-Type: application/json\' --data-raw '
+    pre_cmd = 'curl --location --request POST \'cps-week.internal.aifi.io/api/v1/results\' --header \'TOKEN: ' \
+              '5ea023be-b530-4816-8eda-5340cfabe9b0\' --header \'Content-Type: application/json\' --data-raw '
     f1_scores = []
     f = open("competition/results.md", "w")
     # output_str = ""
@@ -95,10 +101,11 @@ def get_score(output_paths=['outputs/output-BASELINE-1.json']):
     f.write(averageScoreStr)
     f.close()
 
+
 if __name__ == '__main__':
     if not os.path.exists('outputs'):
         os.makedirs('outputs')
     output_paths = generate_output()
     # output_paths = ['outputs/output-BASELINE-1.json', 'outputs/output-BASELINE-2.json']
     print("Submitting: ", output_paths)
-    get_score(output_paths)
+    # get_score(output_paths)

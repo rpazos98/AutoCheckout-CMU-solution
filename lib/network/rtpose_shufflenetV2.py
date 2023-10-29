@@ -194,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--load_pytorch', type=str)
     parser.add_argument('--save_pytorch', type=str)
     parser.add_argument('--save_caffe', type=str)
-    parser.add_argument('--test', type=str)
+    parser.add_argument('--test, type=str)
     args = parser.parse_args()
 
     if args.test is None:

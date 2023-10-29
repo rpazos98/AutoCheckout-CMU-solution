@@ -1,0 +1,38 @@
+[
+  {
+    "archives": [
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/BASELINE-8/BASELINE-8.archive",
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/metadata/Auto%20Checkout%20Metadata.zip"
+    ],
+    "name": "BASELINE-8",
+    "uuid": "a6ee23b8-7ac4-4702-8203-a54ce30de6d7",
+    "version": 1,
+    "videos": [
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/BASELINE-8/Videos.zip"
+    ]
+  },
+  {
+    "archives": [
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/BASELINE-10/BASELINE-10.archive",
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/metadata/Auto%20Checkout%20Metadata.zip"
+    ],
+    "name": "BASELINE-10",
+    "uuid": "de3043db-8b1a-4d70-8829-bbd53f0aff1e",
+    "version": 1,
+    "videos": [
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/BASELINE-10/Videos.zip"
+    ]
+  },
+  {
+    "archives": [
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/BASELINE-12/BASELINE-12.archive",
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/metadata/Auto%20Checkout%20Metadata.zip"
+    ],
+    "name": "BASELINE-12",
+    "uuid": "f669f003-bf52-423c-916a-18afb67b5e43",
+    "version": 1,
+    "videos": [
+      "https://storage.cloud.google.com/aifi-public-data/AiFi%20Nanostore%20AutoCheckout%20Competition%20-%20CPS-IoT%20Week%202020/BASELINE-12/Videos.zip"
+    ]
+  }
+]

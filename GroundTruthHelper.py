@@ -21,7 +21,7 @@ gondola_id = 3
 shelf_id = 4
 plate_id = 4
 
-bk = BookKeeper.BookKeeper(dbname='BASELINE-3')
+bk = BookKeeper.BookKeeper(dbname='cps-test-01')
 
 if plate_id is None:
     product_ids = bk.getProductIDsFromPosition(gondola_id, shelf_id)
