@@ -138,6 +138,7 @@ class BookKeeper():
             }
         })
 
+
         for frameDoc in framesCursor:
             cameraID = frameDoc['camera_id']
             if cameraID not in frames:
