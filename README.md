@@ -89,4 +89,11 @@ Overall F1 is: 66.7%
 
 For this project we are using the Black formatter.
 
-To format your code with it just type in 
+To format your code with it just type in `black .`. This will apply the format to all the code
+
+If the code does not comply with black the pre-commit hooks will fail.
+
+### Execution validation
+
+In order to make sure that we are always pushing working code we are executing `evalution.py` in the pre-commit hook.
+This is the only validation loop today. As we improve this with tests we will be adding those to the hook.
