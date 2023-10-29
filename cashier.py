@@ -58,6 +58,8 @@ class CustomerReceipt():
 Cashier class to generate receipts
 """
 
+SHOULD_GRAPH = True
+
 
 class Cashier():
     def __init__(self):
@@ -83,12 +85,19 @@ class Cashier():
             assert (timestamps_count == weight_plate_mean[i].shape[2])
             assert (timestamps_count == weight_plate_std[i].shape[2])
 
+
         events = weightTrigger.detect_weight_events(weight_shelf_mean, weight_shelf_std, weight_plate_mean,
                                                     weight_plate_std, timestamps)
         events = weightTrigger.splitEvents(events)
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
 
         viz = VizUtils(events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, myBK)
+
+        if SHOULD_GRAPH:
+            graph_weight_shelf_data(events, weight_shelf_mean, timestamps, dbName, "Weight Shelf Mean")
+            graph_weight_shelf_data(events, weight_shelf_std, timestamps, dbName, "Weight Shelf Standard")
+            # graph_weight_plate_data(events, weight_plate_mean, timestamps, dbName, "Weight Plate Mean")
+            # graph_weight_plate_data(events, weight_plate_std, timestamps, dbName, "Weight Plate Standard")
 
         # dictionary recording all receipts
         # KEY: customer ID, VALUE: CustomerReceipt
@@ -219,7 +228,7 @@ class Cashier():
                     print("*Name: " + product.name + ", Quantities: " + str(quantity), product.thumbnail,
                           product.barcode)
                 num_receipt += 1
-        if VIZ:
+if VIZ:
             viz.graph()
         return receipts
 

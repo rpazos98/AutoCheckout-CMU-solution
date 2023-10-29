@@ -18,6 +18,7 @@ NUM_SHELF = 6
 NUM_PLATE = 12
 
 
+
 class BookKeeper():
     def __init__(self, dbname):
         # Access instance DB
