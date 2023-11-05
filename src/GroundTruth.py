@@ -60,9 +60,9 @@ class DatasetGT(Serializable):
         self.events = events
 
 
-with open("./store_meta/Gondolas.json") as f:
+with open("src/resources/store_meta/Gondolas.json") as f:
     gondolasMeta = json.load(f)["gondolas"]
-with open("./store_meta/Shelves.json") as f:
+with open("src/resources/store_meta/Shelves.json") as f:
     shelvesMeta = json.load(f)["shelves"]
-with open("./store_meta/Plates.json") as f:
+with open("src/resources/store_meta/Plates.json") as f:
     platesMeta = json.load(f)["plates"]

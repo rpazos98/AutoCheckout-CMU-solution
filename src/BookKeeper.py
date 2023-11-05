@@ -1,16 +1,12 @@
 import numpy as np
 from pymongo import MongoClient
-from collections import namedtuple
 import cpsdriver.codec as codec
 import GroundTruth as GT
-import math
-from typing import NamedTuple
 import io
-from PIL import Image, ImageDraw
+from PIL import Image
 from config import *
 import json
 import os
-from datetime import datetime
 
 INCH_TO_METER = 0.0254
 NUM_GONDOLA = 5

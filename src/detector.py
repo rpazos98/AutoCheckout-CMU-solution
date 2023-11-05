@@ -2,7 +2,7 @@ import os
 import re
 import sys
 
-sys.path.append(".")
+sys.path.append("..")
 import cv2
 import math
 import time
