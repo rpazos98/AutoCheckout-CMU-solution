@@ -13,7 +13,7 @@ This project is being developed in the context of the graduation project of the
 University of Buenos Aires.
 
 It is based on a prior solution to the problem, and it aims to solve the scenarios that the original solution was not 
-able to solve (see [results evaluation](evaluation.md)).
+able to solve (see [results evaluation](doc/evaluation.md)).
 
 At the same time there is a lot of effort in improving the code and engineering practices and tooling. The objective is 
 to make the project easy to execute and replicate
