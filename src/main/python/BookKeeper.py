@@ -388,7 +388,7 @@ class BookKeeper:
         return product.positions
 
     def getCleanStartTime(self):
-        testCaseStartTimeJSONFilePath = "./competition/TestCaseStartTime.json"
+        testCaseStartTimeJSONFilePath = "src/main/resources/TestCaseStartTime.json"
         if os.path.exists(testCaseStartTimeJSONFilePath):
             with open(testCaseStartTimeJSONFilePath, "r") as f:
                 testStartTime = json.load(f)
