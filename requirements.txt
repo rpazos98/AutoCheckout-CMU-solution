@@ -9,8 +9,8 @@ plotly
 pandas
 moviepy==1.0.3
 black
-mediapipe
 opencv-python
 pascal-voc-writer
 detecto
 albumentations
+tqdm
