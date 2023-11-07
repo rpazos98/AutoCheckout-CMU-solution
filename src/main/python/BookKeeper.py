@@ -1,12 +1,13 @@
 import numpy as np
 from pymongo import MongoClient
-import cpsdriver.codec as codec
 import GroundTruth as GT
 import io
 from PIL import Image
 from config import *
 import json
 import os
+
+from cpsdriver.codec import Product, DocObjectCodec
 
 INCH_TO_METER = 0.0254
 NUM_GONDOLA = 5
@@ -62,7 +63,7 @@ class BookKeeper:
                     "product_id.id": productID,
                 }
             )
-            product = codec.Product.from_dict(productItem)
+            product = Product.from_dict(productItem)
             if product.weight == 0.0:
                 continue
 
@@ -99,7 +100,7 @@ class BookKeeper:
 
     def __buildAllProductsCache(self):
         for item in self.productsDB.find():
-            product = codec.Product.from_dict(item)
+            product = Product.from_dict(item)
             if product.weight == 0.0:
                 continue
 
@@ -149,7 +150,7 @@ class BookKeeper:
 
         for frameKey in frames:
             # print("Frame Key (camera ID) is: ", frameKey)
-            rgbFrame = codec.DocObjectCodec.decode(frames[frameKey], "frame_message")
+            rgbFrame = DocObjectCodec.decode(frames[frameKey], "frame_message")
             imageStream = io.BytesIO(rgbFrame.frame)
             im = Image.open(imageStream)
             frames[frameKey] = im
@@ -176,7 +177,7 @@ class BookKeeper:
             if framesCursor.count() == 0:
                 return None
             item = framesCursor[0]
-            rgb = codec.DocObjectCodec.decode(doc=item, collection="frame_message")
+            rgb = DocObjectCodec.decode(doc=item, collection="frame_message")
             imageStream = io.BytesIO(rgb.frame)
             im = Image.open(imageStream)
             return im

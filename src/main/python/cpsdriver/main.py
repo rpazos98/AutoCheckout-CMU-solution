@@ -1,13 +1,13 @@
 import sys
 import logging
 
-from src.cpsdriver.clients import (
+from src.main.python.cpsdriver.clients import (
     CpsMongoClient,
     CpsApiClient,
     TestCaseClient,
 )
-from src.cpsdriver.cli import parse_configs
-from src.cpsdriver.log import setup_logger
+from src.main.python.cpsdriver.cli import parse_configs
+from src.main.python.cpsdriver.log import setup_logger
 
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name

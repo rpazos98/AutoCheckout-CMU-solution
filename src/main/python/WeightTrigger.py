@@ -2,7 +2,6 @@ import numpy as np
 from cpsdriver.codec import DocObjectCodec
 from datetime import datetime
 from BookKeeper import Position
-import json
 
 
 class PickUpEvent:

@@ -38,7 +38,7 @@ def output_json(db_id, user, receipts, path):
 
 def generate_output():
     # Load JSON
-    f = open("../doc/competition/test_cases_specific.json")
+    f = open("../../../doc/competition/test_cases_specific.json")
 
     test_cases = json.load(f)
     myCashier = Cashier()
@@ -80,7 +80,7 @@ def get_score(output_paths=["outputs/output-BASELINE-1.json"]):
         "5ea023be-b530-4816-8eda-5340cfabe9b0' --header 'Content-Type: application/json' --data-raw "
     )
     f1_scores = []
-    f = open("../doc/competition/results.md", "w")
+    f = open("../../../doc/competition/results.md", "w")
     # output_str = ""
     for path in output_paths:
         with open(path, "r") as file:
@@ -107,8 +107,8 @@ def get_score(output_paths=["outputs/output-BASELINE-1.json"]):
 
 
 if __name__ == "__main__":
-    if not os.path.exists("../outputs"):
-        os.makedirs("../outputs")
+    if not os.path.exists("../../../outputs"):
+        os.makedirs("../../../outputs")
     output_paths = generate_output()
     # output_paths = ['outputs/output-BASELINE-1.json', 'outputs/output-BASELINE-2.json']
     print("Submitting: ", output_paths)
