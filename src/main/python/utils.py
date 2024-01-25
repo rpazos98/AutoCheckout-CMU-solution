@@ -127,3 +127,38 @@ def associate_product_closest(product_loc, targets):
     if not result_id or not result_target:
         result_id, result_target = targets.items[0]
     return result_id, result_target
+
+
+def init_1D_array(dim):
+    array = np.array([None for i in range(dim)], dtype=object)
+    for i in range(dim):
+        array[i] = []
+    return array
+
+
+# [gondola, shelf, ts]
+def init_2D_array(dim1, dim2):
+    array = np.array([[None for j in range(dim2)] for i in range(dim1)], dtype=object)
+    for i in range(dim1):
+        for j in range(dim2):
+            array[i][j] = []
+    return array
+
+
+# [gondola, shelf, plate_id, ts]
+def init_3D_array(dim1, dim2, dim3):
+    array = np.array(
+        [[[None for k in range(dim3)] for j in range(dim2)] for i in range(dim1)],
+        dtype=object,
+    )
+    for i in range(dim1):
+        for j in range(dim2):
+            for k in range(dim3):
+                array[i][j][k] = []
+    return array
+
+
+def rolling_window(a, window):
+    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+    strides = a.strides + (a.strides[-1],)
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)

@@ -1,91 +1,8 @@
 import numpy as np
+
 from cpsdriver.codec import DocObjectCodec
-from datetime import datetime
-from BookKeeper import Position
-
-
-class PickUpEvent:
-    triggerBegin: float  # timestamp
-    triggerEnd: float  # timestamp
-    peakTime: float  # timestamp for the time with highest weight variance
-    nBegin: int
-    nEnd: int
-    deltaWeight: np.float
-    gondolaID: int
-    shelfID: int
-    deltaWeights: list
-
-    def __init__(
-        self,
-        triggerBegin,
-        triggerEnd,
-        peakTime,
-        nBegin,
-        nEnd,
-        deltaWeight,
-        gondolaID,
-        shelfID,
-        deltaWeights,
-    ):
-        self.triggerBegin = triggerBegin
-        self.triggerEnd = triggerEnd
-        self.peakTime = peakTime
-        self.nBegin = nBegin
-        self.nEnd = nEnd
-        self.deltaWeight = deltaWeight
-        self.gondolaID = gondolaID
-        self.shelfID = shelfID
-        self.deltaWeights = deltaWeights
-
-    # for one event, return its most possible gondola/shelf/plate
-    def getEventMostPossiblePosition(self, bk):
-        greatestDelta = 0
-        plateIDWithGreatestDelta = 1
-        for i in range(len(self.deltaWeights)):
-            deltaWeightAbs = abs(self.deltaWeights[i])
-            if deltaWeightAbs > greatestDelta:
-                greatestDelta = deltaWeightAbs
-                plateIDWithGreatestDelta = i + 1
-        return Position(self.gondolaID, self.shelfID, plateIDWithGreatestDelta)
-
-    # for one event, return its all possible (gondola/shelf/plate) above threshold
-    def getEventAllPositions(self, bk):
-        possiblePositions = []
-        # Magic number: A plate take into account only when plate's deltaWeight is more than 20% of shelf's deltaWeight
-        threshold = 0.2
-        thresholdWeight = threshold * abs(self.deltaWeight)
-        for i in range(len(self.deltaWeights)):
-            deltaWeightAbs = abs(self.deltaWeights[i])
-            if deltaWeightAbs >= thresholdWeight:
-                plateID = i + 1
-                possiblePositions.append(
-                    Position(self.gondolaID, self.shelfID, plateID)
-                )
-        return possiblePositions
-
-    def getEventCoordinates(self, bk):
-        position = self.getEventMostPossiblePosition(bk)
-        coordinates = bk.get3DCoordinatesForPlate(
-            position.gondola, position.shelf, position.plate
-        )
-        return coordinates
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        res = "[{},{}] deltaWeight: {}, peakTime: {}, gondola {}, shelf {}, deltaWeights: [".format(
-            datetime.fromtimestamp(self.triggerBegin),
-            datetime.fromtimestamp(self.triggerEnd),
-            self.deltaWeight,
-            datetime.fromtimestamp(self.peakTime),
-            self.gondolaID,
-            self.shelfID,
-        )
-        for deltaWeight in self.deltaWeights:
-            res += "%.2f, " % deltaWeight
-        res += "]"
-        return res
+from PickupEvents import PickUpEvent
+from utils import init_1D_array, rolling_window
 
 
 class WeightTrigger:
@@ -109,34 +26,6 @@ class WeightTrigger:
             self.timestamps,
         ) = self.get_agg_weight()
 
-    def init_1D_array(self, dim):
-        array = np.array([None for i in range(dim)], dtype=object)
-        for i in range(dim):
-            array[i] = []
-        return array
-
-    # [gondola, shelf, ts]
-    def init_2D_array(self, dim1, dim2):
-        array = np.array(
-            [[None for j in range(dim2)] for i in range(dim1)], dtype=object
-        )
-        for i in range(dim1):
-            for j in range(dim2):
-                array[i][j] = []
-        return array
-
-    # [gondola, shelf, plate_id, ts]
-    def init_3D_array(self, dim1, dim2, dim3):
-        array = np.array(
-            [[[None for k in range(dim3)] for j in range(dim2)] for i in range(dim1)],
-            dtype=object,
-        )
-        for i in range(dim1):
-            for j in range(dim2):
-                for k in range(dim3):
-                    array[i][j][k] = []
-        return array
-
     # sliding window detect events
     # concentacate the data set , and use sliding window (60 data points per window)
     # moving average weight, can remove noise and reduce the false trigger caused by shake or unstable during an event
@@ -145,8 +34,8 @@ class WeightTrigger:
         plate_data = self.db["plate_data"]
         agg_plate_data = [None] * number_gondolas
         agg_shelf_data = [None] * number_gondolas
-        timestamps = self.init_1D_array(number_gondolas)
-        date_times = self.init_1D_array(number_gondolas)
+        timestamps = init_1D_array(number_gondolas)
+
         test_start_time = self.__bk.getTestStartTime()
         for item in plate_data.find():
             gondola_id = item["gondola_id"]
@@ -188,7 +77,7 @@ class WeightTrigger:
         return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
     def get_agg_timestamps(self, number_gondolas=5):
-        agg_timestamps = self.init_1D_array(number_gondolas)
+        agg_timestamps = init_1D_array(number_gondolas)
         for gondola_id in range(number_gondolas):
             for i, date_time in enumerate(self.timestamps[gondola_id]):
                 if i < len(self.timestamps[gondola_id]) - 1:
@@ -214,25 +103,25 @@ class WeightTrigger:
                 continue
             moving_weight_shelf_mean.append(
                 np.mean(
-                    self.rolling_window(self.agg_shelf_data[gondola_id], window_size),
+                    rolling_window(self.agg_shelf_data[gondola_id], window_size),
                     -1,
                 )
             )
             moving_weight_shelf_std.append(
                 np.std(
-                    self.rolling_window(self.agg_shelf_data[gondola_id], window_size),
+                    rolling_window(self.agg_shelf_data[gondola_id], window_size),
                     -1,
                 )
             )
             moving_weight_plate_mean.append(
                 np.mean(
-                    self.rolling_window(self.agg_plate_data[gondola_id], window_size),
+                    rolling_window(self.agg_plate_data[gondola_id], window_size),
                     -1,
                 )
             )
             moving_weight_plate_std.append(
                 np.std(
-                    self.rolling_window(self.agg_plate_data[gondola_id], window_size),
+                    rolling_window(self.agg_plate_data[gondola_id], window_size),
                     -1,
                 )
             )
@@ -262,18 +151,19 @@ class WeightTrigger:
         weight_plate_std,
         timestamps,  # timestamps: [gondola, timestamp]
         num_plate=12,
-        thresholds={
-            "std_shelf": 20,
-            "mean_shelf": 10,
-            "mean_plate": 5,
-            "min_event_length": 30,
-        },
+        thresholds=None,
     ):
         # the lightest product is: {'_id': ObjectId('5e30c1c0e3a947a97b665757'), 'product_id': {'barcode_type': 'UPC', 'id': '041420027161'}, 'metadata': {'name': 'TROLLI SBC ALL STAR MIX', 'thumbnail': 'https://cdn.shopify.com/s/files/1/0083/0704/8545/products/41420027161_cce873d6-f143-408c-864e-eb351a730114.jpg?v=1565210393', 'price': 1, 'weight': 24}}
 
+        if thresholds is None:
+            thresholds = {
+                "std_shelf": 20,
+                "mean_shelf": 10,
+                "mean_plate": 5,
+                "min_event_length": 30,
+            }
         events = []
         num_gondola = len(weight_shelf_mean)
-        num_times = len(timestamps[0])
         for gondola_idx in range(num_gondola):
             num_shelf = weight_shelf_mean[gondola_idx].shape[0]
             for shelf_idx in range(num_shelf):
