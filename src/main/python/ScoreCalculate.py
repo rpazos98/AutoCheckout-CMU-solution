@@ -90,7 +90,7 @@ class ScoreCalculator:
             for deltaWeight in deltaWeights:
                 probPerPlate.append(deltaWeight / overallDelta)
 
-        productIDsOnTheShelf = self.__bk.getProductIDsFromPosition(
+        productIDsOnTheShelf = self.__bk.getProductIDsFromPosition_2D(
             self.__event.gondolaID, self.__event.shelfID
         )
         for productID in productIDsOnTheShelf:

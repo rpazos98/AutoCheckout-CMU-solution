@@ -66,7 +66,20 @@ class Cashier:
 
     def process(self, dbName):
         myBK = BK.BookKeeper(dbName)
-        weightTrigger = WT(myBK)
+        get_product_ids_from_position_3d = (
+            lambda x, y, z: myBK.getProductIDsFromPosition_3D(x, y, z)
+        )
+        get_product_ids_from_position_2d = (
+            lambda x, y: myBK.getProductIDsFromPosition_2D(x, y)
+        )
+        get_product_by_id = lambda x: myBK.getProductByID(x)
+        weightTrigger = WT(
+            myBK.getTestStartTime(),
+            myBK.db["plate_data"],
+            get_product_ids_from_position_2d,
+            get_product_ids_from_position_3d,
+            get_product_by_id,
+        )
 
         (
             weight_shelf_mean,

@@ -16,10 +16,19 @@ class WeightTrigger:
     # shelf where event happens,
     # a list plates where event happens.
 
-    def __init__(self, BK):
-        self.__bk = BK
-        self.db = BK.db
-        self.plate_data = BK.plateDB
+    def __init__(
+        self,
+        test_start_time,
+        plate_cursor,
+        get_product_id_from_position_2d,
+        get_product_id_from_position_3d,
+        get_product_by_id,
+    ):
+        self.plate_cursor = plate_cursor
+        self.test_start_time = test_start_time
+        self.get_product_id_from_position_2d = get_product_id_from_position_2d
+        self.get_product_id_from_position_3d = get_product_id_from_position_3d
+        self.get_product_by_id = get_product_by_id
         (
             self.agg_plate_data,
             self.agg_shelf_data,
@@ -31,12 +40,12 @@ class WeightTrigger:
     # moving average weight, can remove noise and reduce the false trigger caused by shake or unstable during an event
 
     def get_agg_weight(self, number_gondolas=5):
-        plate_data = self.db["plate_data"]
+        plate_data = self.plate_cursor
         agg_plate_data = [None] * number_gondolas
         agg_shelf_data = [None] * number_gondolas
         timestamps = init_1D_array(number_gondolas)
 
-        test_start_time = self.__bk.getTestStartTime()
+        test_start_time = self.test_start_time
         for item in plate_data.find():
             gondola_id = item["gondola_id"]
             plate_data_item = DocObjectCodec.decode(doc=item, collection="plate_data")
@@ -253,12 +262,12 @@ class WeightTrigger:
             for i in range(numberOfPlates):
                 absDeltaWeights.append(abs(pickUpEvent.deltaWeights[i]))
 
-            productIDsOnThisShelf = self.__bk.getProductIDsFromPosition(
+            productIDsOnThisShelf = self.get_product_id_from_position_2d(
                 gondolaID, shelfID
             )
             minWeightOnThisShelf = float("inf")
             for productID in productIDsOnThisShelf:
-                productExtended = self.__bk.getProductByID(productID)
+                productExtended = self.get_product_by_id(productID)
                 if productExtended.weight < minWeightOnThisShelf:
                     minWeightOnThisShelf = productExtended.weight
 
@@ -277,7 +286,7 @@ class WeightTrigger:
             for i in range(len(potentialActivePlateIDs)):
                 # for i in range(numberOfPlates): # [0, 11] or [0, 8]
                 plateID = potentialActivePlateIDs[i]
-                productsInPlateI = self.__bk.getProductIDsFromPosition(
+                productsInPlateI = self.get_product_id_from_position_3d(
                     gondolaID, shelfID, plateID
                 )  # [1, 12] or [1, 9]
                 if i == 0:
