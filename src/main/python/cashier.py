@@ -5,9 +5,9 @@
 # from moviepy.video.fx.crop import crop
 
 from ScoreCalculate import *
-from WeightTrigger import WeightTrigger as WT
+from WeightTrigger import WeightTrigger
 from config import *
-from cpsdriver.codec import Targets
+from cpsdriver.codec import Targets, DocObjectCodec
 from utils import *
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
@@ -66,7 +66,24 @@ class Cashier:
 
     def process(self, dbName):
         myBK = BK.BookKeeper(dbName)
-        weightTrigger = WT(myBK)
+        get_product_ids_from_position_3d = (
+            lambda x, y, z: myBK.getProductIDsFromPosition_3D(x, y, z)
+        )
+        get_product_ids_from_position_2d = (
+            lambda x, y: myBK.getProductIDsFromPosition_2D(x, y)
+        )
+        get_product_by_id = lambda x: myBK.getProductByID(x)
+        plate_data = map(
+            lambda x: DocObjectCodec.decode(doc=x, collection="plate_data"),
+            myBK.db["plate_data"].find(),
+        )
+        weightTrigger = WeightTrigger(
+            myBK.getTestStartTime(),
+            list(plate_data),
+            get_product_ids_from_position_2d,
+            get_product_ids_from_position_3d,
+            get_product_by_id,
+        )
 
         (
             weight_shelf_mean,
@@ -93,7 +110,6 @@ class Cashier:
             weight_shelf_mean,
             weight_shelf_std,
             weight_plate_mean,
-            weight_plate_std,
             timestamps,
         )
         events = weightTrigger.splitEvents(events)

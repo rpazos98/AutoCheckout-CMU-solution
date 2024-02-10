@@ -367,21 +367,17 @@ class BookKeeper:
             plateMetaIndexKey = str(gondolaID) + "_" + str(shelfID) + "_" + str(plateID)
             self._platesDict[plateMetaIndexKey] = plateMeta
 
-    def getProductIDsFromPosition(self, *argv):
-        gondolaIdx = argv[0] - 1
-        if len(argv) == 2:
-            shelfIdx = argv[1] - 1
-            # remove Nones
-            productIDs = set()
-            for productIDSetForPlate in self._planogram[gondolaIdx][shelfIdx]:
-                if productIDSetForPlate is None:
-                    continue
-                productIDs = productIDs.union(productIDSetForPlate)
-            return productIDs
-        if len(argv) == 3:
-            shelfIdx = argv[1] - 1
-            plateIdx = argv[2] - 1
-            return self._planogram[gondolaIdx][shelfIdx][plateIdx]
+    def getProductIDsFromPosition_2D(self, gondolaIdx, shelfIdx):
+        # remove Nones
+        productIDs = set()
+        for productIDSetForPlate in self._planogram[gondolaIdx - 1][shelfIdx - 1]:
+            if productIDSetForPlate is None:
+                continue
+            productIDs = productIDs.union(productIDSetForPlate)
+        return productIDs
+
+    def getProductIDsFromPosition_3D(self, gondolaIdx, shelfIdx, plateIdx):
+        return self._planogram[gondolaIdx - 1][shelfIdx - 1][plateIdx - 1]
 
     def getProductPositions(self, productID):
         product = self.getProductByID(productID)
