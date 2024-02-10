@@ -19,12 +19,12 @@ class WeightTrigger:
     def __init__(
         self,
         test_start_time,
-        plate_cursor,
+        plate_data,
         get_product_id_from_position_2d,
         get_product_id_from_position_3d,
         get_product_by_id,
     ):
-        self.plate_cursor = plate_cursor
+        self.plate_data = plate_data
         self.test_start_time = test_start_time
         self.get_product_id_from_position_2d = get_product_id_from_position_2d
         self.get_product_id_from_position_3d = get_product_id_from_position_3d
@@ -40,13 +40,12 @@ class WeightTrigger:
     # moving average weight, can remove noise and reduce the false trigger caused by shake or unstable during an event
 
     def get_agg_weight(self, number_gondolas=5):
-        plate_data = self.plate_cursor
         agg_plate_data = [None] * number_gondolas
         agg_shelf_data = [None] * number_gondolas
         timestamps = init_1D_array(number_gondolas)
 
         test_start_time = self.test_start_time
-        for item in plate_data.find():
+        for item in self.plate_data:
             gondola_id = item["gondola_id"]
             plate_data_item = DocObjectCodec.decode(doc=item, collection="plate_data")
 
