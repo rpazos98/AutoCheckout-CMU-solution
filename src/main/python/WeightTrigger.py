@@ -36,7 +36,7 @@ class WeightTrigger:
         ) = self.get_agg_weight()
 
     # sliding window detect events
-    # concentacate the data set , and use sliding window (60 data points per window)
+    # concatenate the data set , and use sliding window (60 data points per window)
     # moving average weight, can remove noise and reduce the false trigger caused by shake or unstable during an event
 
     def get_agg_weight(self, number_gondolas=5):
@@ -44,26 +44,17 @@ class WeightTrigger:
         agg_shelf_data = [None] * number_gondolas
         timestamps = init_1D_array(number_gondolas)
 
-        test_start_time = self.test_start_time
         for item in self.plate_data:
-            gondola_id = item["gondola_id"]
-            plate_data_item = DocObjectCodec.decode(doc=item, collection="plate_data")
-
-            timestamp = plate_data_item.timestamp  # seconds since epoch
-            if timestamp < test_start_time:
+            gondola_id = item.plate_id.gondola_id
+            # seconds since epoch
+            if item.timestamp < self.test_start_time:
                 continue
-            np_plate = plate_data_item.data  # [time,shelf,plate]
-            np_plate = np.nan_to_num(
-                np_plate, copy=True, nan=0
-            )  # replace all NaN elements to 0
-            np_plate = np_plate[
-                :, 1:13, 1:13
-            ]  # remove first line, which is always NaN elements
-            if gondola_id == 2 or gondola_id == 4 or gondola_id == 5:
-                np_plate[:, :, 9:12] = 0
-            np_shelf = np_plate.sum(axis=2)  # [time,shelf]
-            np_shelf = np_shelf.transpose()  # [shelf, time]
-            np_plate = np_plate.transpose(1, 2, 0)  # [shelf,plate,time]
+            np_shelf = (
+                self.adapt_np_plate(gondola_id, item.data).sum(axis=2).transpose()
+            )  # [shelf, time]
+            np_plate = self.adapt_np_plate(gondola_id, item.data).transpose(
+                1, 2, 0
+            )  # [shelf,plate,time]
             if agg_plate_data[gondola_id - 1] is not None:
                 agg_plate_data[gondola_id - 1] = np.append(
                     agg_plate_data[gondola_id - 1], np_plate, axis=2
@@ -75,9 +66,16 @@ class WeightTrigger:
                 agg_plate_data[gondola_id - 1] = np_plate
                 agg_shelf_data[gondola_id - 1] = np_shelf
 
-            timestamps[gondola_id - 1].append(timestamp)
+            timestamps[gondola_id - 1].append(item.timestamp)
 
         return agg_plate_data, agg_shelf_data, timestamps
+
+    def adapt_np_plate(self, gondola_id, item):
+        # replace all NaN elements to 0
+        # remove first line, which is always NaN elements
+        if gondola_id == 2 or gondola_id == 4 or gondola_id == 5:
+            np.nan_to_num(item, copy=True, nan=0)[:, 1:13, 1:13][:, :, 9:12] = 0
+        return np.nan_to_num(item, copy=True, nan=0)[:, 1:13, 1:13]
 
     def rolling_window(self, a, window):
         shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
@@ -156,12 +154,14 @@ class WeightTrigger:
         weight_shelf_mean,
         weight_shelf_std,  # TODO: matlab used var
         weight_plate_mean,
-        weight_plate_std,
         timestamps,  # timestamps: [gondola, timestamp]
         num_plate=12,
         thresholds=None,
     ):
-        # the lightest product is: {'_id': ObjectId('5e30c1c0e3a947a97b665757'), 'product_id': {'barcode_type': 'UPC', 'id': '041420027161'}, 'metadata': {'name': 'TROLLI SBC ALL STAR MIX', 'thumbnail': 'https://cdn.shopify.com/s/files/1/0083/0704/8545/products/41420027161_cce873d6-f143-408c-864e-eb351a730114.jpg?v=1565210393', 'price': 1, 'weight': 24}}
+        # the lightest product is: {'_id': ObjectId('5e30c1c0e3a947a97b665757'), 'product_id': {'barcode_type':
+        # 'UPC', 'id': '041420027161'}, 'metadata': {'name': 'TROLLI SBC ALL STAR MIX', 'thumbnail':
+        # 'https://cdn.shopify.com/s/files/1/0083/0704/8545/products/41420027161_cce873d6-f143-408c-864e-eb351a730114
+        # .jpg?v=1565210393', 'price': 1, 'weight': 24}}
 
         if thresholds is None:
             thresholds = {
@@ -255,8 +255,6 @@ class WeightTrigger:
             # calculate the threshold for contributing plates
             potentialActivePlateIDs = []
             numberOfPlates = 12
-            if gondolaID == 2 or gondolaID == 4 or gondolaID == 5:
-                numberOfPlates = 9
             absDeltaWeights = []
             for i in range(numberOfPlates):
                 absDeltaWeights.append(abs(pickUpEvent.deltaWeights[i]))
