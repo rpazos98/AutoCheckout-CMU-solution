@@ -30,13 +30,11 @@ class BookKeeper:
         self.__dbname = dbname
 
         # Reference to DB collections
-        self.planogramDB = planogram_cursor
-        self.productsDB = products_cursor
-        self.plateDB = plate_cursor
-        self._targetsDB = targets_cursor
-        if self._targetsDB.count() == 0:
-            self._targetsDB = targets_cursor
-        self._frameDB = frame_cursor
+        self.planogram_cursor = planogram_cursor
+        self.products_cursor = products_cursor
+        self.plate_cursor = plate_cursor
+        self.targets_cursor = targets_cursor
+        self.frame_cursor = frame_cursor
 
         self._planogram = None
         self._productsCache = {}
@@ -58,14 +56,14 @@ class BookKeeper:
     def __loadPlanogram(self):
         planogram = np.empty((NUM_GONDOLA, NUM_SHELF, NUM_PLATE), dtype=object)
 
-        for item in self.planogramDB.find():
+        for item in self.planogram_cursor.find():
 
             if "id" not in item["planogram_product_id"]:
                 continue
             productID = item["planogram_product_id"]["id"]
             if productID == "":
                 continue
-            productItem = self.productsDB.find_one(
+            productItem = self.products_cursor.find_one(
                 {
                     "product_id.id": productID,
                 }
@@ -106,7 +104,7 @@ class BookKeeper:
                 productExtended.positions.add(position)
 
     def __buildAllProductsCache(self):
-        for item in self.productsDB.find():
+        for item in self.products_cursor.find():
             product = Product.from_dict(item)
             if product.weight == 0.0:
                 continue
@@ -142,7 +140,7 @@ class BookKeeper:
         timeEnd = event.triggerEnd
         frames = {}
         # TODO: date_time different format in test 2
-        framesCursor = self._frameDB.find(
+        framesCursor = self.frame_cursor.find(
             {"timestamp": {"$gte": timeBegin, "$lt": timeEnd}}
         )
 
@@ -177,7 +175,7 @@ class BookKeeper:
 
     def getFrameImage(self, timestamp, camera_id=None):
         if camera_id is not None:
-            framesCursor = self._frameDB.find(
+            framesCursor = self.frame_cursor.find(
                 {"timestamp": float(timestamp), "camera_id": int(camera_id)}
             )
             # One timestamp should corresponds to only one frame
@@ -190,7 +188,7 @@ class BookKeeper:
             return im
         else:
             image_dict = {}
-            framesCursor = self._frameDB.find(
+            framesCursor = self.frame_cursor.find(
                 {
                     "timestamp": float(timestamp),
                 }
@@ -217,7 +215,7 @@ class BookKeeper:
     def getTargetsForEvent(self, event):
         timeBegin = event.triggerBegin
         timeEnd = event.triggerEnd
-        targetsCursor = self._targetsDB.find(
+        targetsCursor = self.targets_cursor.find(
             {"timestamp": {"$gte": timeBegin, "$lt": timeEnd}}
         )
         # print("Duration: ", timeBegin, timeEnd)
@@ -406,7 +404,7 @@ class BookKeeper:
 
     def getTestStartTime(self):
         videoStartTime = self.getCleanStartTime()
-        dbStartTime = self.plateDB.find_one(sort=[("timestamp", 1)])["timestamp"]
+        dbStartTime = self.plate_cursor.find_one(sort=[("timestamp", 1)])["timestamp"]
         if videoStartTime - dbStartTime >= 10:
             return videoStartTime
         else:
