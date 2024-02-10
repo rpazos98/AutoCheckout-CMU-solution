@@ -1,4 +1,5 @@
 # from cpsdriver.codec import DocObjectCodec
+from pymongo import MongoClient
 
 # import moviepy
 # from moviepy.editor import *
@@ -65,24 +66,40 @@ class Cashier:
         pass
 
     def process(self, dbName):
-        myBK = BK.BookKeeper(dbName)
-        get_product_ids_from_position_3d = (
-            lambda x, y, z: myBK.getProductIDsFromPosition_3D(x, y, z)
+
+        # Access instance DB
+        _mongoClient = MongoClient("mongodb://localhost:27017")
+        db = _mongoClient[dbName]
+
+        # Reference to DB collections
+        planogram_cursor = db["planogram"]
+        products_cursor = db["products"]
+        plate_cursor = db["plate_data"]
+        targets_cursor = db["full_targets"]
+        if targets_cursor.count() == 0:
+            targets_cursor = db["targets"]
+        frame_cursor = db["frame_message"]
+
+        bookkeeper = BK.BookKeeper(
+            dbName,
+            planogram_cursor,
+            products_cursor,
+            plate_cursor,
+            targets_cursor,
+            frame_cursor,
         )
-        get_product_ids_from_position_2d = (
-            lambda x, y: myBK.getProductIDsFromPosition_2D(x, y)
-        )
-        get_product_by_id = lambda x: myBK.getProductByID(x)
-        plate_data = map(
-            lambda x: DocObjectCodec.decode(doc=x, collection="plate_data"),
-            myBK.db["plate_data"].find(),
-        )
+
         weightTrigger = WeightTrigger(
-            myBK.getTestStartTime(),
-            list(plate_data),
-            get_product_ids_from_position_2d,
-            get_product_ids_from_position_3d,
-            get_product_by_id,
+            bookkeeper.getTestStartTime(),
+            list(
+                map(
+                    lambda x: DocObjectCodec.decode(doc=x, collection="plate_data"),
+                    plate_cursor.find(),
+                )
+            ),
+            (lambda x, y: bookkeeper.getProductIDsFromPosition_2D(x, y)),
+            (lambda x, y, z: bookkeeper.getProductIDsFromPosition_3D(x, y, z)),
+            lambda x: bookkeeper.getProductByID(x),
         )
 
         (
@@ -116,7 +133,7 @@ class Cashier:
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
 
         viz = VizUtils(
-            events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, myBK
+            events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, bookkeeper
         )
 
         if SHOULD_GRAPH:
@@ -142,8 +159,8 @@ class Cashier:
             ################################ Naive Association ################################
 
             # absolutePos = myBK.getProductCoordinates(productID)
-            absolutePos = event.getEventCoordinates(myBK)
-            targets = myBK.getTargetsForEvent(event)
+            absolutePos = event.getEventCoordinates(bookkeeper)
+            targets = bookkeeper.getTargetsForEvent(event)
             if VIZ:
                 viz.addEventPosition(event, absolutePos)
             # Initliaze a customer receipt for all new targets
@@ -197,16 +214,16 @@ class Cashier:
                     continue
 
                 # Put the product on the shelf will affect planogram
-                myBK.addProduct(event.getEventAllPositions(myBK), product)
+                bookkeeper.addProduct(event.getEventAllPositions(bookkeeper), product)
             else:
-                scoreCalculator = ScoreCalculator(myBK, event)
+                scoreCalculator = ScoreCalculator(bookkeeper, event)
                 topProductScore = scoreCalculator.getTopK(1)[0]
                 if VERBOSE:
                     print("top 5 predicted products:")
                     for productScore in scoreCalculator.getTopK(5):
                         print(productScore)
 
-                topProductExtended = myBK.getProductByID(topProductScore.barcode)
+                topProductExtended = bookkeeper.getProductByID(topProductScore.barcode)
 
                 product = topProductExtended
 

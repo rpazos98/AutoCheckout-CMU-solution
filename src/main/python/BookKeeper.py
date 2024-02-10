@@ -8,6 +8,7 @@ import json
 import os
 
 from cpsdriver.codec import Product, DocObjectCodec
+from cpsdriver import codec
 
 INCH_TO_METER = 0.0254
 NUM_GONDOLA = 5
@@ -16,20 +17,26 @@ NUM_PLATE = 12
 
 
 class BookKeeper:
-    def __init__(self, dbname):
+    def __init__(
+        self,
+        dbname,
+        planogram_cursor,
+        products_cursor,
+        plate_cursor,
+        targets_cursor,
+        frame_cursor,
+    ):
         # Access instance DB
-        _mongoClient = MongoClient("mongodb://localhost:27017")
         self.__dbname = dbname
-        self.db = _mongoClient[dbname]
 
         # Reference to DB collections
-        self.planogramDB = self.db["planogram"]
-        self.productsDB = self.db["products"]
-        self.plateDB = self.db["plate_data"]
-        self._targetsDB = self.db["full_targets"]
+        self.planogramDB = planogram_cursor
+        self.productsDB = products_cursor
+        self.plateDB = plate_cursor
+        self._targetsDB = targets_cursor
         if self._targetsDB.count() == 0:
-            self._targetsDB = self.db["targets"]
-        self._frameDB = self.db["frame_message"]
+            self._targetsDB = targets_cursor
+        self._frameDB = frame_cursor
 
         self._planogram = None
         self._productsCache = {}
