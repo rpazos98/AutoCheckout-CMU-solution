@@ -91,8 +91,8 @@ class Cashier:
 
         bookkeeper = BK.BookKeeper(
             planogram,
-            targets_cursor,
-            frame_cursor,
+            lambda x: targets_cursor.find(x),
+            lambda x: frame_cursor.find(x),
             product_ids_from_products_table,
             gondolas_dict,
             shelves_dict,
@@ -110,6 +110,11 @@ class Cashier:
             (lambda x, y: get_product_ids_from_position_2d(x, y, planogram)),
             (lambda x, y, z: get_product_ids_from_position_3d(x, y, z, planogram)),
             lambda x: get_product_by_id(x, products_cache),
+            (
+                lambda x, y, z: get_3d_coordinates_for_plate(
+                    x, y, z, gondolas_dict, shelves_dict, plates_dict
+                )
+            ),
         )
 
         (
@@ -168,11 +173,10 @@ class Cashier:
 
             ################################ Naive Association ################################
 
-            # absolutePos = myBK.getProductCoordinates(productID)
-            absolutePos = event.getEventCoordinates(bookkeeper)
-            targets = bookkeeper.getTargetsForEvent(event)
+            absolute_pos = event.get_event_coordinates()
+            targets = bookkeeper.get_targets_for_event(event)
             if VIZ:
-                viz.addEventPosition(event, absolutePos)
+                viz.addEventPosition(event, absolute_pos)
             # Initliaze a customer receipt for all new targets
             for target_id in targets.keys():
                 if target_id not in receipts:
@@ -184,11 +188,11 @@ class Cashier:
                 continue
 
             if ASSOCIATION_TYPE == CE_ASSOCIATION:
-                target_id, _ = associate_product_ce(absolutePos, targets)
+                target_id, _ = associate_product_ce(absolute_pos, targets)
             elif ASSOCIATION_TYPE == CLOSEST_ASSOCIATION:
-                target_id, _ = associate_product_closest(absolutePos, targets)
+                target_id, _ = associate_product_closest(absolute_pos, targets)
             else:
-                target_id, _ = associate_product_naive(absolutePos, targets)
+                target_id, _ = associate_product_naive(absolute_pos, targets)
 
             ################################ Calculate score ################################
 
@@ -228,7 +232,7 @@ class Cashier:
 
                 # Put the product_extendend on the shelf will affect planogram
                 bookkeeper.add_product(
-                    event.getEventAllPositions(bookkeeper), product_extendend
+                    event.get_event_all_positions(bookkeeper), product_extendend
                 )
             else:
                 score_calculator = ScoreCalculator(

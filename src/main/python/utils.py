@@ -7,6 +7,7 @@ from ProductExtended import ProductExtended
 from cpsdriver.codec import Product
 from math_utils import *
 from Constants import BODY_THRESH
+from Coordinates import Coordinates
 
 """
 Helper functions to associate targets to a product with head ONLY
@@ -301,3 +302,50 @@ def get_clean_start_time(dbname):
             "Please run TimeTravel.py to get the json file"
         )
         return 0
+
+
+def get_3d_coordinates_for_plate(
+    gondola, shelf, plate, gondolas_dict, shelves_dict, plates_dict
+):
+    gondola_meta_key = str(gondola)
+    shelf_meta_key = str(gondola) + "_" + str(shelf)
+    plate_meta_key = str(gondola) + "_" + str(shelf) + "_" + str(plate)
+
+    # TODO: rotation values for one special gondola
+    absolute_3d = Coordinates(0, 0, 0)
+    gondola_translation = get_translation(gondolas_dict[gondola_meta_key])
+    absolute_3d.translateBy(
+        gondola_translation["x"], gondola_translation["y"], gondola_translation["z"]
+    )
+
+    if gondola == 5:
+        # rotate by 90 degrees
+        shelf_translation = get_translation(shelves_dict[shelf_meta_key])
+        absolute_3d.translateBy(
+            -shelf_translation["y"], shelf_translation["x"], shelf_translation["z"]
+        )
+
+        plate_translation = get_translation(plates_dict[plate_meta_key])
+        absolute_3d.translateBy(
+            -plate_translation["y"], plate_translation["x"], plate_translation["z"]
+        )
+
+    else:
+        shelf_translation = get_translation(shelves_dict[shelf_meta_key])
+        absolute_3d.translateBy(
+            shelf_translation["x"], shelf_translation["y"], shelf_translation["z"]
+        )
+
+        key_ = plates_dict.get(plate_meta_key)
+        if key_ is None:
+            return absolute_3d
+        plate_translation = get_translation(key_)
+        absolute_3d.translateBy(
+            plate_translation["x"], plate_translation["y"], plate_translation["z"]
+        )
+
+    return absolute_3d
+
+
+def get_translation(meta):
+    return meta["coordinates"]["transform"]["translation"]

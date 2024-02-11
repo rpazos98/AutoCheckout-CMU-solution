@@ -4,24 +4,20 @@ from Target import Target
 from config import *
 
 
-def get_translation(meta):
-    return meta["coordinates"]["transform"]["translation"]
-
-
 class BookKeeper:
     def __init__(
         self,
         planogram,
-        targets_cursor,
-        frame_cursor,
+        targets_find,
+        frame_find,
         products_id_from_products_table,
         gondolas_dict,
         shelves_dict,
         plates_dict,
     ):
         # Reference to DB collections
-        self.targets_cursor = targets_cursor
-        self.frame_cursor = frame_cursor
+        self.targets_find = targets_find
+        self.frame_find = frame_find
 
         self.planogram = planogram
 
@@ -54,18 +50,18 @@ class BookKeeper:
         List[target]: all the in-store target during this event period
     """
 
-    def getTargetsForEvent(self, event):
-        timeBegin = event.triggerBegin
-        timeEnd = event.triggerEnd
-        targetsCursor = self.targets_cursor.find(
-            {"timestamp": {"$gte": timeBegin, "$lt": timeEnd}}
+    def get_targets_for_event(self, event):
+        time_begin = event.triggerBegin
+        time_end = event.triggerEnd
+        targets_cursor = self.targets_find(
+            {"timestamp": {"$gte": time_begin, "$lt": time_end}}
         )
-        # print("Duration: ", timeBegin, timeEnd)
+        # print("Duration: ", time_begin, time_end)
         # Sort the all targets entry in a timely order
-        targetsCursor.sort([("timestamp", 1)])
+        targets_cursor.sort([("timestamp", 1)])
         targets = {}
-        num_timestamps = targetsCursor.count()
-        for i, targetDoc in enumerate(targetsCursor):
+        num_timestamps = targets_cursor.count()
+        for i, targetDoc in enumerate(targets_cursor):
             if "targets" not in targetDoc["document"]["targets"]:
                 continue
             target_list = targetDoc["document"]["targets"]["targets"]
@@ -134,9 +130,9 @@ class BookKeeper:
             # print(i, num_timestamps, targetDoc['timestamp'])
             # print(targets.items())
             if i > num_timestamps / 2:
-                # print("Trigger duration ", datetime.fromtimestamp(timeBegin), datetime.fromtimestamp(timeEnd))
+                # print("Trigger duration ", datetime.fromtimestamp(time_begin), datetime.fromtimestamp(time_end))
                 # print("Peak time ", datetime.fromtimestamp(event.peakTime))
-                # print(timeBegin, event.peakTime, timeEnd)
+                # print(time_begin, event.peakTime, time_end)
                 # print("Break at date time: ", targetDoc['date_time'])
                 break
             if targetDoc["timestamp"] > event.peakTime:
@@ -148,43 +144,3 @@ class BookKeeper:
                 targets.keys(),
             )
         return targets
-
-    def get_3d_coordinates_for_plate(self, gondola, shelf, plate):
-        gondola_meta_key = str(gondola)
-        shelf_meta_key = str(gondola) + "_" + str(shelf)
-        plate_meta_key = str(gondola) + "_" + str(shelf) + "_" + str(plate)
-
-        # TODO: rotation values for one special gondola
-        absolute_3d = Coordinates(0, 0, 0)
-        gondola_translation = get_translation(self._gondolasDict[gondola_meta_key])
-        absolute_3d.translateBy(
-            gondola_translation["x"], gondola_translation["y"], gondola_translation["z"]
-        )
-
-        if gondola == 5:
-            # rotate by 90 degrees
-            shelf_translation = get_translation(self._shelvesDict[shelf_meta_key])
-            absolute_3d.translateBy(
-                -shelf_translation["y"], shelf_translation["x"], shelf_translation["z"]
-            )
-
-            plate_translation = get_translation(self._platesDict[plate_meta_key])
-            absolute_3d.translateBy(
-                -plate_translation["y"], plate_translation["x"], plate_translation["z"]
-            )
-
-        else:
-            shelf_translation = get_translation(self._shelvesDict[shelf_meta_key])
-            absolute_3d.translateBy(
-                shelf_translation["x"], shelf_translation["y"], shelf_translation["z"]
-            )
-
-            key_ = self._platesDict.get(plate_meta_key)
-            if key_ is None:
-                return absolute_3d
-            plate_translation = get_translation(key_)
-            absolute_3d.translateBy(
-                plate_translation["x"], plate_translation["y"], plate_translation["z"]
-            )
-
-        return absolute_3d

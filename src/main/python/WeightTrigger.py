@@ -23,12 +23,14 @@ class WeightTrigger:
         get_product_id_from_position_2d,
         get_product_id_from_position_3d,
         get_product_by_id,
+        get_3d_coordinates_for_plate,
     ):
         self.plate_data = plate_data
         self.test_start_time = test_start_time
         self.get_product_id_from_position_2d = get_product_id_from_position_2d
         self.get_product_id_from_position_3d = get_product_id_from_position_3d
         self.get_product_by_id = get_product_by_id
+        self.get_3d_coordinates_for_plate = get_3d_coordinates_for_plate
         (
             self.agg_plate_data,
             self.agg_shelf_data,
@@ -229,103 +231,104 @@ class WeightTrigger:
                             gondola_idx + 1,
                             shelf_idx + 1,
                             plates,
+                            self.get_3d_coordinates_for_plate,
                         )
 
                         events.append(event)
         return events
 
     # events
-    def splitEvents(self, pickUpEvents):
-        splittedEvents = []
-        for pickUpEvent in pickUpEvents:
+    def splitEvents(self, pick_up_events):
+        splitted_events = []
+        for pickUpEvent in pick_up_events:
             # print ('----------------------')
             # print ('event', pickUpEvent)
             if pickUpEvent.deltaWeight > 0:
-                splittedEvents.append(pickUpEvent)
+                splitted_events.append(pickUpEvent)
                 continue
 
-            triggerBegin = pickUpEvent.triggerBegin
-            triggerEnd = pickUpEvent.triggerEnd
-            peakTime = pickUpEvent.peakTime
-            nBegin = pickUpEvent.nBegin
-            nEnd = pickUpEvent.nEnd
-            gondolaID = pickUpEvent.gondolaID
-            shelfID = pickUpEvent.shelfID
+            trigger_begin = pickUpEvent.triggerBegin
+            trigger_end = pickUpEvent.triggerEnd
+            peak_time = pickUpEvent.peakTime
+            n_begin = pickUpEvent.nBegin
+            n_end = pickUpEvent.nEnd
+            gondola_id = pickUpEvent.gondolaID
+            shelf_id = pickUpEvent.shelfID
 
             # calculate the threshold for contributing plates
-            potentialActivePlateIDs = []
-            numberOfPlates = 12
-            absDeltaWeights = []
-            for i in range(numberOfPlates):
-                absDeltaWeights.append(abs(pickUpEvent.deltaWeights[i]))
+            potential_active_plate_ids = []
+            number_of_plates = 12
+            abs_delta_weights = []
+            for i in range(number_of_plates):
+                abs_delta_weights.append(abs(pickUpEvent.deltaWeights[i]))
 
-            productIDsOnThisShelf = self.get_product_id_from_position_2d(
-                gondolaID, shelfID
+            product_ids_on_this_shelf = self.get_product_id_from_position_2d(
+                gondola_id, shelf_id
             )
             min_weight_on_this_shelf = float("inf")
-            for productID in productIDsOnThisShelf:
-                productExtended = self.get_product_by_id(productID)
-                if productExtended.product.weight < min_weight_on_this_shelf:
-                    min_weight_on_this_shelf = productExtended.product.weight
+            for productID in product_ids_on_this_shelf:
+                product_extended = self.get_product_by_id(productID)
+                if product_extended.product.weight < min_weight_on_this_shelf:
+                    min_weight_on_this_shelf = product_extended.product.weight
 
-            plateActiveThreshold = min_weight_on_this_shelf / 3.0
+            plate_active_threshold = min_weight_on_this_shelf / 3.0
             # print (min_weight_on_this_shelf)
-            # print (plateActiveThreshold)
-            for i in range(numberOfPlates):
-                if absDeltaWeights[i] >= plateActiveThreshold:
-                    potentialActivePlateIDs.append(i + 1)
+            # print (plate_active_threshold)
+            for i in range(number_of_plates):
+                if abs_delta_weights[i] >= plate_active_threshold:
+                    potential_active_plate_ids.append(i + 1)
 
             # use planogram to split events into groups
             # shelf planogram [1,2],[1,2,3],[3,4,5], [6,7,8,9]
             # => poetential event [1-5], [6-9]
             groups = []  # [subEvent=[3,4,5], subEvent=[7,8]]
-            productsInLastPlate = set()
-            for i in range(len(potentialActivePlateIDs)):
-                # for i in range(numberOfPlates): # [0, 11] or [0, 8]
-                plateID = potentialActivePlateIDs[i]
-                productsInPlateI = self.get_product_id_from_position_3d(
-                    gondolaID, shelfID, plateID
+            products_in_last_plate = set()
+            for i in range(len(potential_active_plate_ids)):
+                # for i in range(number_of_plates): # [0, 11] or [0, 8]
+                plate_id = potential_active_plate_ids[i]
+                products_in_plate_i = self.get_product_id_from_position_3d(
+                    gondola_id, shelf_id, plate_id
                 )  # [1, 12] or [1, 9]
                 if i == 0:
-                    for productID in productsInPlateI:
-                        productsInLastPlate.add(productID)
-                    groups.append([plateID])
+                    for productID in products_in_plate_i:
+                        products_in_last_plate.add(productID)
+                    groups.append([plate_id])
                 else:
                     connected = False
-                    for productID in productsInPlateI:
-                        if productID in productsInLastPlate:
+                    for productID in products_in_plate_i:
+                        if productID in products_in_last_plate:
                             connected = True
                             break
                     if connected:
-                        for productID in productsInPlateI:
-                            productsInLastPlate.add(productID)
-                        groups[-1].append(plateID)
+                        for productID in products_in_plate_i:
+                            products_in_last_plate.add(productID)
+                        groups[-1].append(plate_id)
                     else:
-                        groups.append([plateID])
-                        productsInLastPlate = set()
-                        for productID in productsInPlateI:
-                            productsInLastPlate.add(productID)
+                        groups.append([plate_id])
+                        products_in_last_plate = set()
+                        for productID in products_in_plate_i:
+                            products_in_last_plate.add(productID)
 
             # generate subEvent for each group
             for group in groups:
-                deltaWeights = np.zeros(numberOfPlates)
-                deltaWeight = 0
-                for plateID in group:
-                    weightOnThisPlate = pickUpEvent.deltaWeights[plateID - 1]
-                    deltaWeights[plateID - 1] = weightOnThisPlate
-                    deltaWeight += weightOnThisPlate
+                delta_weights = np.zeros(number_of_plates)
+                delta_weight = 0
+                for plate_id in group:
+                    weight_on_this_plate = pickUpEvent.deltaWeights[plate_id - 1]
+                    delta_weights[plate_id - 1] = weight_on_this_plate
+                    delta_weight += weight_on_this_plate
 
-                splittedEvent = PickUpEvent(
-                    triggerBegin,
-                    triggerEnd,
-                    peakTime,
-                    nBegin,
-                    nEnd,
-                    deltaWeight,
-                    gondolaID,
-                    shelfID,
-                    deltaWeights,
+                splitted_event = PickUpEvent(
+                    trigger_begin,
+                    trigger_end,
+                    peak_time,
+                    n_begin,
+                    n_end,
+                    delta_weight,
+                    gondola_id,
+                    shelf_id,
+                    delta_weights,
+                    self.get_3d_coordinates_for_plate,
                 )
-                splittedEvents.append(splittedEvent)
-                # print ('splitted event:', splittedEvent)
-        return splittedEvents
+                splitted_events.append(splitted_event)
+        return splitted_events
