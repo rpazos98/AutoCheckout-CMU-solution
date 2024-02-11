@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from BookKeeper import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
+from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
 
 logging.basicConfig(
     level=logging.INFO,

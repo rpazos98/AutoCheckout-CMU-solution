@@ -1,4 +1,5 @@
-import BookKeeper as BK
+from Position import Position
+from cpsdriver.codec import Product
 from math_utils import *
 
 BODY_THRESH = 0.8
@@ -162,3 +163,40 @@ def rolling_window(a, window):
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+
+
+def load_planogram(self):
+    planogram = np.empty((NUM_GONDOLA, NUM_SHELF, NUM_PLATE), dtype=object)
+
+    for item in self.planogram_data:
+
+        if "id" not in item["planogram_product_id"]:
+            continue
+        productID = item["planogram_product_id"]["id"]
+        if productID == "":
+            continue
+        productItem = self.products_cursor.find_one(
+            {
+                "product_id.id": productID,
+            }
+        )
+        product = Product.from_dict(productItem)
+        if product.weight == 0.0:
+            continue
+
+        productExtended = self.getProductByID(productID)
+        for plate in item["plate_ids"]:
+            shelf = plate["shelf_id"]
+            gondola = shelf["gondola_id"]
+            gondolaID = gondola["id"]
+            shelfID = shelf["shelf_index"]
+            plateID = plate["plate_index"]
+
+            if planogram[gondolaID - 1][shelfID - 1][plateID - 1] is None:
+                planogram[gondolaID - 1][shelfID - 1][plateID - 1] = set()
+            planogram[gondolaID - 1][shelfID - 1][plateID - 1].add(productID)
+            self.productIDsFromPlanogramTable.add(productID)
+
+            productExtended.positions.add(Position(gondolaID, shelfID, plateID))
+
+    return planogram

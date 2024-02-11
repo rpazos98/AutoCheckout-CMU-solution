@@ -9,18 +9,16 @@ import os
 
 from cpsdriver.codec import Product, DocObjectCodec
 from cpsdriver import codec
-
-INCH_TO_METER = 0.0254
-NUM_GONDOLA = 5
-NUM_SHELF = 6
-NUM_PLATE = 12
+from Position import Position
+from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE, INCH_TO_METER
+from Coordinates import Coordinates
 
 
 class BookKeeper:
     def __init__(
         self,
         dbname,
-        planogram_cursor,
+        planogram_data,
         products_cursor,
         plate_cursor,
         targets_cursor,
@@ -30,11 +28,13 @@ class BookKeeper:
         self.__dbname = dbname
 
         # Reference to DB collections
-        self.planogram_cursor = planogram_cursor
-        self.products_cursor = products_cursor
-        self.plate_cursor = plate_cursor
-        self.targets_cursor = targets_cursor
-        self.frame_cursor = frame_cursor
+        self.planogram_data = planogram_data
+        self.products_cursor = products_cursor  # find one y find
+        self.plate_cursor = plate_cursor  # find one
+        self.targets_cursor = targets_cursor  # find con filtro
+        self.frame_cursor = frame_cursor  # find con filtro
+
+        ## puedo meter un find con parametros opcionales y
 
         self._planogram = None
         self._productsCache = {}
@@ -56,7 +56,7 @@ class BookKeeper:
     def __loadPlanogram(self):
         planogram = np.empty((NUM_GONDOLA, NUM_SHELF, NUM_PLATE), dtype=object)
 
-        for item in self.planogram_cursor.find():
+        for item in self.planogram_data:
 
             if "id" not in item["planogram_product_id"]:
                 continue
@@ -409,58 +409,6 @@ class BookKeeper:
             return videoStartTime
         else:
             return 0
-
-
-class Position:
-    gondola: int
-    shelf: int
-    plate: int
-
-    def __init__(self, gondola, shelf, plate):
-        self.gondola = gondola
-        self.shelf = shelf
-        self.plate = plate
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return "Position(gondola=%d, shelf=%d, plate=%d)" % (
-            self.gondola,
-            self.shelf,
-            self.plate,
-        )
-
-    def __eq__(self, other):
-        if isinstance(other, Position):
-            return (
-                self.gondola == other.gondola
-                and self.shelf == other.shelf
-                and self.plate == other.plate
-            )
-        else:
-            return False
-
-    def __hash__(self):
-        return hash((self.gondola, self.shelf, self.plate))
-
-
-class Coordinates:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def translateBy(self, delta_x, delta_y, delta_z):
-        self.x += delta_x
-        self.y += delta_y
-        self.z += delta_z
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return "Coordinates(%f, %f, %f)" % (self.x, self.y, self.z)
 
 
 # class Frame:

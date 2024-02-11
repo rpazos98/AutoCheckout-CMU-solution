@@ -72,7 +72,7 @@ class Cashier:
         db = _mongoClient[dbName]
 
         # Reference to DB collections
-        planogram_cursor = db["planogram"]
+        planogram_cursor = db["planogram"].find()
         products_cursor = db["products"]
         plate_cursor = db["plate_data"]
         targets_cursor = db["full_targets"]
