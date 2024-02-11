@@ -26,12 +26,10 @@ def associate_product_naive(product_loc, targets):
     min_dist = float("inf")
     for id, target in targets.items():
         distance = calculate_distance3D(target.head["position"], product_loc)
-        # print("Distance for target: ", id, "is: ", str(distance))
         if distance < min_dist:
             result_id = id
             result_target = target
             min_dist = distance
-    # print("Result ID: ", result_id)
     return result_id, result_target
 
 
@@ -73,12 +71,10 @@ def associate_product_ce(product_loc, targets):
         else:
             ce_distance /= total_score
 
-        # print("Distance for target: ", id, "is: ", str(ce_distance))
         if ce_distance <= min_dist:
             result_id = id
             result_target = target
             min_dist = ce_distance
-    # print("Result ID: ", result_id)
     return result_id, result_target
 
 
@@ -101,14 +97,12 @@ def associate_product_closest(product_loc, targets):
         closest_dist = float("inf")
         if target.head is not None:
             head, score = target.head["position"], target.head["score"]
-            # print("head dist", calculate_distance3D(head, product_loc), "score", score)
             if score > BODY_THRESH:
                 closest_dist = min(
                     calculate_distance3D(head, product_loc), closest_dist
                 )
         if target.left_hand is not None:
             left_hand, score = target.left_hand["position"], target.left_hand["score"]
-            # print("left_hand dist", calculate_distance3D(left_hand, product_loc), "score", score)
             if score > BODY_THRESH:
                 closest_dist = min(
                     calculate_distance3D(left_hand, product_loc), closest_dist
@@ -118,24 +112,21 @@ def associate_product_closest(product_loc, targets):
                 target.right_hand["position"],
                 target.right_hand["score"],
             )
-            # print("right_hand dist", calculate_distance3D(right_hand, product_loc), "score", score)
             if score > BODY_THRESH:
                 closest_dist = min(
                     calculate_distance3D(right_hand, product_loc), closest_dist
                 )
 
-        # print("Closest distance for target: ", id, "is: ", str(closest_dist))
         if closest_dist <= min_dist:
             result_id = id
             result_target = target
             min_dist = closest_dist
-    # print("Result ID: ", result_id)
     if not result_id or not result_target:
         result_id, result_target = targets.items[0]
     return result_id, result_target
 
 
-def init_1D_array(dim):
+def init_1d_array(dim):
     array = np.array([None for i in range(dim)], dtype=object)
     for i in range(dim):
         array[i] = []
@@ -143,7 +134,7 @@ def init_1D_array(dim):
 
 
 # [gondola, shelf, ts]
-def init_2D_array(dim1, dim2):
+def init_2d_array(dim1, dim2):
     array = np.array([[None for j in range(dim2)] for i in range(dim1)], dtype=object)
     for i in range(dim1):
         for j in range(dim2):
@@ -152,7 +143,7 @@ def init_2D_array(dim1, dim2):
 
 
 # [gondola, shelf, plate_id, ts]
-def init_3D_array(dim1, dim2, dim3):
+def init_3d_array(dim1, dim2, dim3):
     array = np.array(
         [[[None for k in range(dim3)] for j in range(dim2)] for i in range(dim1)],
         dtype=object,
