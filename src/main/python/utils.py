@@ -6,8 +6,7 @@ from Position import Position
 from ProductExtended import ProductExtended
 from cpsdriver.codec import Product
 from math_utils import *
-
-BODY_THRESH = 0.8
+from Constants import BODY_THRESH
 
 """
 Helper functions to associate targets to a product with head ONLY

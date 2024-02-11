@@ -26,17 +26,3 @@ class ProductExtended:
 
     def get_barcode_type(self):
         return self.product.product_id.barcode_type
-
-    def __str__(self):
-        return (
-            "Product(barcode_type=%s, barcode=%s, name=%s, thumbnail=%s, price=%f, weight=%f, positions=%s)"
-            % (
-                self.barcode_type,
-                self.barcode,
-                self.name,
-                self.thumbnail,
-                self.price,
-                self.weight,
-                str(self.positions),
-            )
-        )
