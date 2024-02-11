@@ -224,7 +224,7 @@ class VizUtils:
         for gondola_id in range(1, NUM_GONDOLA):
             for shelf_id in range(1, NUM_SHELF):
                 for plate_id in range(1, NUM_PLATE):
-                    coordinates = self.book_keeper.get3DCoordinatesForPlate(
+                    coordinates = self.book_keeper.get_3d_coordinates_for_plate(
                         gondola_id, shelf_id, plate_id
                     )
                     xs.append(coordinates.x)

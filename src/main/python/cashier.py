@@ -32,8 +32,8 @@ class CustomerReceipt:
     target (BK.Target): Target object for this customer
     """
 
-    def __init__(self, customerID):
-        self.customerID = customerID
+    def __init__(self, customer_id):
+        self.customerID = customer_id
         # productID -> (product, num_product)
         self.purchaseList = {}
 
@@ -46,13 +46,13 @@ class CustomerReceipt:
             self.purchaseList[product_id] = (product, num_product)
 
     def putback(self, product, num_product):
-        productID = product.product
-        if productID in self.purchaseList:
-            product, quantity = self.purchaseList[productID]
+        product_id = product.product
+        if product_id in self.purchaseList:
+            product, quantity = self.purchaseList[product_id]
             if quantity > num_product:
-                self.purchaseList[productID] = (product, quantity - num_product)
+                self.purchaseList[product_id] = (product, quantity - num_product)
             else:
-                del self.purchaseList[productID]
+                del self.purchaseList[product_id]
 
 
 """
@@ -227,7 +227,7 @@ class Cashier:
                     continue
 
                 # Put the product_extendend on the shelf will affect planogram
-                bookkeeper.addProduct(
+                bookkeeper.add_product(
                     event.getEventAllPositions(bookkeeper), product_extendend
                 )
             else:

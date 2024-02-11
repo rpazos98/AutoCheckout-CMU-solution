@@ -66,7 +66,7 @@ class PickUpEvent:
 
     def getEventCoordinates(self, bk):
         position = self.getEventMostPossiblePosition(bk)
-        coordinates = bk.get3DCoordinatesForPlate(
+        coordinates = bk.get_3d_coordinates_for_plate(
             position.gondola, position.shelf, position.plate
         )
         return coordinates

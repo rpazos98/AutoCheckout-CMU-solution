@@ -12,6 +12,10 @@ from cpsdriver import codec
 from cpsdriver.codec import DocObjectCodec
 
 
+def get_translation(meta):
+    return meta["coordinates"]["transform"]["translation"]
+
+
 class BookKeeper:
     def __init__(
         self,
@@ -24,8 +28,8 @@ class BookKeeper:
         plates_dict,
     ):
         # Reference to DB collections
-        self.targets_cursor = targets_cursor  # find con filtro
-        self.frame_cursor = frame_cursor  # find con filtro
+        self.targets_cursor = targets_cursor
+        self.frame_cursor = frame_cursor
 
         self.planogram = planogram
 
@@ -36,88 +40,19 @@ class BookKeeper:
 
         self.productIDsFromProductsTable = products_id_from_products_table
 
-    def addProduct(self, positions, productExtended):
+    def add_product(self, positions, product_extended):
         for position in positions:
-            gondolaID, shelfID, plateID = (
+            gondola_id, shelf_id, plate_id = (
                 position.gondola,
                 position.shelf,
                 position.plate,
             )
-            self.planogram[gondolaID - 1][shelfID - 1][plateID - 1].add(
-                productExtended.product
+            self.planogram[gondola_id - 1][shelf_id - 1][plate_id - 1].add(
+                product_extended.product
             )
             # Update product position
-            if position not in productExtended.positions:
-                productExtended.positions.add(position)
-
-    def getFramesForEvent(self, event):
-        timeBegin = event.triggerBegin
-        timeEnd = event.triggerEnd
-        frames = {}
-        # TODO: date_time different format in test 2
-        framesCursor = self.frame_cursor.find(
-            {"timestamp": {"$gte": timeBegin, "$lt": timeEnd}}
-        )
-
-        for frameDoc in framesCursor:
-            cameraID = frameDoc["camera_id"]
-            if cameraID not in frames:
-                frames[cameraID] = frameDoc
-            else:
-                if frames[cameraID]["date_time"] <= frameDoc["date_time"]:
-                    # pick an earlier frame for this camera
-                    frames[cameraID] = frameDoc
-
-        for frameKey in frames:
-            # print("Frame Key (camera ID) is: ", frameKey)
-            rgbFrame = DocObjectCodec.decode(frames[frameKey], "frame_message")
-            imageStream = io.BytesIO(rgbFrame.frame)
-            im = Image.open(imageStream)
-            frames[frameKey] = im
-        if VERBOSE:
-            print("Capture {} camera frames in this event".format(len(frames)))
-        return frames
-
-    """
-    Function to get a frame Image from the database
-    Input:
-        timestamp: double/string
-        camera_id: int/string, if camera id is not specified, returns all the image with camera IDs
-    Output:
-        (with camera ID) PIL Image: Image object RGB format
-        (without camera ID): dictionary {camera_id: PIL Image}
-    """
-
-    def getFrameImage(self, timestamp, camera_id=None):
-        if camera_id is not None:
-            framesCursor = self.frame_cursor.find(
-                {"timestamp": float(timestamp), "camera_id": int(camera_id)}
-            )
-            # One timestamp should corresponds to only one frame
-            if framesCursor.count() == 0:
-                return None
-            item = framesCursor[0]
-            rgb = DocObjectCodec.decode(doc=item, collection="frame_message")
-            imageStream = io.BytesIO(rgb.frame)
-            im = Image.open(imageStream)
-            return im
-        else:
-            image_dict = {}
-            framesCursor = self.frame_cursor.find(
-                {
-                    "timestamp": float(timestamp),
-                }
-            )
-            if framesCursor.count() == 0:
-                return None
-            for item in framesCursor:
-                # print("Found image with camera id: ", item['camera_id'])
-                camera_id = item["camera_id"]
-                rgb = codec.DocObjectCodec.decode(doc=item, collection="frame_message")
-                imageStream = io.BytesIO(rgb.frame)
-                im = Image.open(imageStream)
-                image_dict[camera_id] = im
-            return image_dict
+            if position not in product_extended.positions:
+                product_extended.positions.add(position)
 
     """
     Function to get lastest targets for an event
@@ -222,57 +157,42 @@ class BookKeeper:
             )
         return targets
 
-    def get3DCoordinatesForPlate(self, gondola, shelf, plate):
-        gondolaMetaKey = str(gondola)
-        shelfMetaKey = str(gondola) + "_" + str(shelf)
-        plateMetaKey = str(gondola) + "_" + str(shelf) + "_" + str(plate)
+    def get_3d_coordinates_for_plate(self, gondola, shelf, plate):
+        gondola_meta_key = str(gondola)
+        shelf_meta_key = str(gondola) + "_" + str(shelf)
+        plate_meta_key = str(gondola) + "_" + str(shelf) + "_" + str(plate)
 
         # TODO: rotation values for one special gondola
-        absolute3D = Coordinates(0, 0, 0)
-        gondolaTranslation = self._getTranslation(self._gondolasDict[gondolaMetaKey])
-        absolute3D.translateBy(
-            gondolaTranslation["x"], gondolaTranslation["y"], gondolaTranslation["z"]
+        absolute_3d = Coordinates(0, 0, 0)
+        gondola_translation = get_translation(self._gondolasDict[gondola_meta_key])
+        absolute_3d.translateBy(
+            gondola_translation["x"], gondola_translation["y"], gondola_translation["z"]
         )
 
         if gondola == 5:
             # rotate by 90 degrees
-            shelfTranslation = self._getTranslation(self._shelvesDict[shelfMetaKey])
-            absolute3D.translateBy(
-                -shelfTranslation["y"], shelfTranslation["x"], shelfTranslation["z"]
+            shelf_translation = get_translation(self._shelvesDict[shelf_meta_key])
+            absolute_3d.translateBy(
+                -shelf_translation["y"], shelf_translation["x"], shelf_translation["z"]
             )
 
-            plateTranslation = self._getTranslation(self._platesDict[plateMetaKey])
-            absolute3D.translateBy(
-                -plateTranslation["y"], plateTranslation["x"], plateTranslation["z"]
+            plate_translation = get_translation(self._platesDict[plate_meta_key])
+            absolute_3d.translateBy(
+                -plate_translation["y"], plate_translation["x"], plate_translation["z"]
             )
 
         else:
-            shelfTranslation = self._getTranslation(self._shelvesDict[shelfMetaKey])
-            absolute3D.translateBy(
-                shelfTranslation["x"], shelfTranslation["y"], shelfTranslation["z"]
+            shelf_translation = get_translation(self._shelvesDict[shelf_meta_key])
+            absolute_3d.translateBy(
+                shelf_translation["x"], shelf_translation["y"], shelf_translation["z"]
             )
 
-            key_ = self._platesDict.get(plateMetaKey)
+            key_ = self._platesDict.get(plate_meta_key)
             if key_ is None:
-                return absolute3D
-            plateTranslation = self._getTranslation(key_)
-            absolute3D.translateBy(
-                plateTranslation["x"], plateTranslation["y"], plateTranslation["z"]
+                return absolute_3d
+            plate_translation = get_translation(key_)
+            absolute_3d.translateBy(
+                plate_translation["x"], plate_translation["y"], plate_translation["z"]
             )
 
-        return absolute3D
-
-    def _getTranslation(self, meta):
-        return meta["coordinates"]["transform"]["translation"]
-
-
-# class Frame:
-
-"""
-Class for customer target
-Attributes:
-    self.head: Coordinates. global coordinate of head position. Usage: Coordinates.x, Coordinates.y, Coordinates.z
-    self.id: STRING. Identify of the target.
-    self.score: FLOAT. Confidence score of the target existence.
-    self.valid_entrance: BOOL. Whether this target is a valid entrance at the store.
-"""
+        return absolute_3d
