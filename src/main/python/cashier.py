@@ -1,4 +1,5 @@
 # from cpsdriver.codec import DocObjectCodec
+from pymongo import MongoClient
 
 # import moviepy
 # from moviepy.editor import *
@@ -8,6 +9,7 @@ from ScoreCalculate import *
 from WeightTrigger import WeightTrigger
 from config import *
 from cpsdriver.codec import Targets, DocObjectCodec
+import GroundTruth
 from utils import *
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
@@ -30,27 +32,27 @@ class CustomerReceipt:
     target (BK.Target): Target object for this customer
     """
 
-    def __init__(self, customerID):
-        self.customerID = customerID
+    def __init__(self, customer_id):
+        self.customerID = customer_id
         # productID -> (product, num_product)
         self.purchaseList = {}
 
     def purchase(self, product, num_product):
-        productID = product.barcode
-        if productID in self.purchaseList:
-            product, quantity = self.purchaseList[productID]
-            self.purchaseList[productID] = (product, quantity + num_product)
+        product_id = product.product_id.barcode
+        if product_id in self.purchaseList:
+            product, quantity = self.purchaseList[product_id]
+            self.purchaseList[product_id] = (product, quantity + num_product)
         else:
-            self.purchaseList[productID] = (product, num_product)
+            self.purchaseList[product_id] = (product, num_product)
 
     def putback(self, product, num_product):
-        productID = product.barcode
-        if productID in self.purchaseList:
-            product, quantity = self.purchaseList[productID]
+        product_id = product.product
+        if product_id in self.purchaseList:
+            product, quantity = self.purchaseList[product_id]
             if quantity > num_product:
-                self.purchaseList[productID] = (product, quantity - num_product)
+                self.purchaseList[product_id] = (product, quantity - num_product)
             else:
-                del self.purchaseList[productID]
+                del self.purchaseList[product_id]
 
 
 """
@@ -65,24 +67,54 @@ class Cashier:
         pass
 
     def process(self, dbName):
-        myBK = BK.BookKeeper(dbName)
-        get_product_ids_from_position_3d = (
-            lambda x, y, z: myBK.getProductIDsFromPosition_3D(x, y, z)
+
+        # Access instance DB
+        _mongoClient = MongoClient("mongodb://localhost:27017")
+        db = _mongoClient[dbName]
+
+        # Reference to DB collections
+        planogram_cursor = db["planogram"].find()
+        products_cursor = db["products"]
+        plate_cursor = db["plate_data"]
+        targets_cursor = db["full_targets"]
+        if targets_cursor.count() == 0:
+            targets_cursor = db["targets"]
+        frame_cursor = db["frame_message"]
+
+        products_cache, product_ids_from_products_table = build_all_products_cache(
+            products_cursor
         )
-        get_product_ids_from_position_2d = (
-            lambda x, y: myBK.getProductIDsFromPosition_2D(x, y)
+        planogram = load_planogram(planogram_cursor, products_cursor, products_cache)
+        gondolas_dict, shelves_dict, plates_dict = build_dicts_from_store_meta(
+            GroundTruth.gondolas_meta, GroundTruth.shelves_meta, GroundTruth.plates_meta
         )
-        get_product_by_id = lambda x: myBK.getProductByID(x)
-        plate_data = map(
-            lambda x: DocObjectCodec.decode(doc=x, collection="plate_data"),
-            myBK.db["plate_data"].find(),
+
+        bookkeeper = BK.BookKeeper(
+            planogram,
+            lambda x: targets_cursor.find(x),
+            lambda x: frame_cursor.find(x),
+            product_ids_from_products_table,
+            gondolas_dict,
+            shelves_dict,
+            plates_dict,
         )
-        weightTrigger = WeightTrigger(
-            myBK.getTestStartTime(),
-            list(plate_data),
-            get_product_ids_from_position_2d,
-            get_product_ids_from_position_3d,
-            get_product_by_id,
+
+        weight_trigger = WeightTrigger(
+            get_test_start_time(plate_cursor, dbName),
+            list(
+                map(
+                    lambda x: DocObjectCodec.decode(doc=x, collection="plate_data"),
+                    plate_cursor.find(),
+                )
+            ),
+            (lambda x, y: get_product_ids_from_position_2d(x, y, planogram)),
+            (lambda x, y, z: get_product_ids_from_position_3d(x, y, z, planogram)),
+            lambda x: get_product_by_id(x, products_cache),
+            (
+                lambda x, y, z: get_3d_coordinates_for_plate(
+                    x, y, z, gondolas_dict, shelves_dict, plates_dict
+                )
+            ),
         )
 
         (
@@ -90,11 +122,11 @@ class Cashier:
             weight_shelf_std,
             weight_plate_mean,
             weight_plate_std,
-        ) = weightTrigger.get_moving_weight()
+        ) = weight_trigger.get_moving_weight()
 
         number_gondolas = len(weight_shelf_mean)
         # reduce timestamp
-        timestamps = weightTrigger.get_agg_timestamps()
+        timestamps = weight_trigger.get_agg_timestamps()
         for i in range(number_gondolas):
             timestamps[i] = timestamps[i][30:-29]
 
@@ -106,17 +138,17 @@ class Cashier:
             assert timestamps_count == weight_plate_mean[i].shape[2]
             assert timestamps_count == weight_plate_std[i].shape[2]
 
-        events = weightTrigger.detect_weight_events(
+        events = weight_trigger.detect_weight_events(
             weight_shelf_mean,
             weight_shelf_std,
             weight_plate_mean,
             timestamps,
         )
-        events = weightTrigger.splitEvents(events)
+        events = weight_trigger.splitEvents(events)
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
 
         viz = VizUtils(
-            events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, myBK
+            events, timestamps, dbName, weight_shelf_mean, weight_shelf_std, bookkeeper
         )
 
         if SHOULD_GRAPH:
@@ -141,11 +173,10 @@ class Cashier:
 
             ################################ Naive Association ################################
 
-            # absolutePos = myBK.getProductCoordinates(productID)
-            absolutePos = event.getEventCoordinates(myBK)
-            targets = myBK.getTargetsForEvent(event)
+            absolute_pos = event.get_event_coordinates()
+            targets = bookkeeper.get_targets_for_event(event)
             if VIZ:
-                viz.addEventPosition(event, absolutePos)
+                viz.addEventPosition(event, absolute_pos)
             # Initliaze a customer receipt for all new targets
             for target_id in targets.keys():
                 if target_id not in receipts:
@@ -157,11 +188,11 @@ class Cashier:
                 continue
 
             if ASSOCIATION_TYPE == CE_ASSOCIATION:
-                target_id, _ = associate_product_ce(absolutePos, targets)
+                target_id, _ = associate_product_ce(absolute_pos, targets)
             elif ASSOCIATION_TYPE == CLOSEST_ASSOCIATION:
-                target_id, _ = associate_product_closest(absolutePos, targets)
+                target_id, _ = associate_product_closest(absolute_pos, targets)
             else:
-                target_id, _ = associate_product_naive(absolutePos, targets)
+                target_id, _ = associate_product_naive(absolute_pos, targets)
 
             ################################ Calculate score ################################
 
@@ -175,48 +206,57 @@ class Cashier:
                 customer_receipt = receipts[target_id]
                 purchase_list = (
                     customer_receipt.purchaseList
-                )  # productID -> (product, num_product)
+                )  # productID -> (product_extendend, num_product)
 
-                # find most possible putback product whose weight is closest to the event weight
+                # find most possible putback product_extendend whose weight is closest to the event weight
                 candidate_products = []
                 for item in purchase_list.values():
-                    product, num_product = item
+                    product_extendend, num_product = item
                     for count in range(1, num_product + 1):
-                        candidate_products.append((product, count))
+                        candidate_products.append((product_extendend, count))
 
                 if len(candidate_products) == 0:
                     continue
-                # item = (product, count)
+                # item = (product_extendend, count)
                 candidate_products.sort(
                     key=lambda item: abs(item[0].weight * item[1] - event.deltaWeight)
                 )
-                product, putback_count = candidate_products[0]
+                product_extendend, putback_count = candidate_products[0]
 
                 # If weight difference is too large, ignore this event
-                if abs(event.deltaWeight) < PUTBACK_JITTER_RATE * product.weight:
-                    continue
-
-                # Put the product on the shelf will affect planogram
-                myBK.addProduct(event.getEventAllPositions(myBK), product)
-            else:
-                scoreCalculator = ScoreCalculator(myBK, event)
-                topProductScore = scoreCalculator.getTopK(1)[0]
-                if VERBOSE:
-                    print("top 5 predicted products:")
-                    for productScore in scoreCalculator.getTopK(5):
-                        print(productScore)
-
-                topProductExtended = myBK.getProductByID(topProductScore.barcode)
-
-                product = topProductExtended
-
-                # If deltaWeight is too small compared to the predicted product, ignore this event
                 if (
                     abs(event.deltaWeight)
-                    < GRAB_FROM_SHELF_JITTER_RATE * product.weight
+                    < PUTBACK_JITTER_RATE * product_extendend.weight
                 ):
                     continue
-            productID = product.barcode
+
+                # Put the product_extendend on the shelf will affect planogram
+                bookkeeper.add_product(
+                    event.get_event_all_positions(bookkeeper), product_extendend
+                )
+            else:
+                score_calculator = ScoreCalculator(
+                    event, planogram, products_cache, product_ids_from_products_table
+                )
+                top_product_score = score_calculator.get_top_k(1)[0]
+                if VERBOSE:
+                    print("top 5 predicted products:")
+                    for productScore in score_calculator.get_top_k(5):
+                        print(productScore)
+
+                top_product_extended = get_product_by_id(
+                    top_product_score.product.product.product_id.barcode, products_cache
+                )
+
+                product_extendend = top_product_extended
+
+                # If deltaWeight is too small compared to the predicted product_extendend, ignore this event
+                if (
+                    abs(event.deltaWeight)
+                    < GRAB_FROM_SHELF_JITTER_RATE * product_extendend.product.weight
+                ):
+                    continue
+            productID = product_extendend.product
 
             ################################ Update receipt records ################################
             # New customer, create a new receipt
@@ -232,23 +272,26 @@ class Cashier:
                 pred_quantity = putback_count
                 if DEBUG:
                     customer_receipt.purchase(
-                        product, pred_quantity
+                        product_extendend, pred_quantity
                     )  # In the evaluation code, putback is still an event, so we accumulate for debug purpose
                 else:
-                    customer_receipt.putback(product, pred_quantity)
+                    customer_receipt.putback(product_extendend, pred_quantity)
             else:
                 # Predict quantity from delta weight
                 pred_quantity = max(
-                    int(round(abs(event.deltaWeight / product.weight))), 1
+                    int(
+                        round(abs(event.deltaWeight / product_extendend.product.weight))
+                    ),
+                    1,
                 )
-                customer_receipt.purchase(product, pred_quantity)
+                customer_receipt.purchase(product_extendend.product, pred_quantity)
             if VIZ:
                 viz.addEventProduct(
                     event,
                     {
-                        "name": product.name,
+                        "name": product_extendend.name,
                         "quantity": pred_quantity,
-                        "weight": product.weight,
+                        "weight": product_extendend.weight,
                     },
                 )
 
@@ -256,22 +299,22 @@ class Cashier:
                 print(
                     "Predicted: [%s][putback=%d] %s, weight=%dg, count=%d, thumbnail=%s"
                     % (
-                        product.barcode,
+                        product_extendend.product,
                         isPutbackEvent,
-                        product.name,
-                        product.weight,
+                        product_extendend.name,
+                        product_extendend.weight,
                         pred_quantity,
-                        product.thumbnail,
+                        product_extendend.thumbnail,
                     )
                 )
             else:
                 print(
                     "Predicted: [%s][putback=%d] %s, weight=%dg, count=%d"
                     % (
-                        product.barcode,
+                        product_extendend.product,
                         isPutbackEvent,
-                        product.name,
-                        product.weight,
+                        product_extendend.product.name,
+                        product_extendend.product.weight,
                         pred_quantity,
                     )
                 )
@@ -288,11 +331,14 @@ class Cashier:
                 print("Customer ID: " + id)
                 print("Purchase List: ")
                 for _, entry in customer_receipt.purchaseList.items():
-                    product, quantity = entry
+                    product_extendend, quantity = entry
                     print(
-                        "*Name: " + product.name + ", Quantities: " + str(quantity),
-                        product.thumbnail,
-                        product.barcode,
+                        "*Name: "
+                        + product_extendend.name
+                        + ", Quantities: "
+                        + str(quantity),
+                        product_extendend.thumbnail,
+                        product_extendend.product,
                     )
                 num_receipt += 1
             if VIZ:

@@ -32,7 +32,7 @@ else:
 for product_id in product_ids:
     productExtended = bk.getProductByID(product_id)
     objProduct = Product(
-        productExtended.barcode,
+        productExtended.product,
         productExtended.barcode_type,
         productExtended.name,
         productExtended.thumbnail,

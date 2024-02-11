@@ -2,7 +2,8 @@ from datetime import datetime
 
 import numpy as np
 
-from BookKeeper import Position
+from Position import Position
+from Constants import THRESHOLD
 
 
 class PickUpEvent:
@@ -18,55 +19,55 @@ class PickUpEvent:
 
     def __init__(
         self,
-        triggerBegin,
-        triggerEnd,
-        peakTime,
-        nBegin,
-        nEnd,
-        deltaWeight,
-        gondolaID,
-        shelfID,
-        deltaWeights,
+        trigger_begin,
+        trigger_end,
+        peak_time,
+        n_begin,
+        n_end,
+        delta_weight,
+        gondola_id,
+        shelf_id,
+        delta_weights,
+        get_3d_coordinates_for_plate,
     ):
-        self.triggerBegin = triggerBegin
-        self.triggerEnd = triggerEnd
-        self.peakTime = peakTime
-        self.nBegin = nBegin
-        self.nEnd = nEnd
-        self.deltaWeight = deltaWeight
-        self.gondolaID = gondolaID
-        self.shelfID = shelfID
-        self.deltaWeights = deltaWeights
+        self.triggerBegin = trigger_begin
+        self.triggerEnd = trigger_end
+        self.peakTime = peak_time
+        self.nBegin = n_begin
+        self.nEnd = n_end
+        self.deltaWeight = delta_weight
+        self.gondolaID = gondola_id
+        self.shelfID = shelf_id
+        self.deltaWeights = delta_weights
+        self.get_3d_coordinates_for_plate = get_3d_coordinates_for_plate
 
     # for one event, return its most possible gondola/shelf/plate
-    def getEventMostPossiblePosition(self, bk):
-        greatestDelta = 0
-        plateIDWithGreatestDelta = 1
+    def get_event_most_possible_position(self):
+        greatest_delta = 0
+        plate_id_with_greatest_delta = 1
         for i in range(len(self.deltaWeights)):
-            deltaWeightAbs = abs(self.deltaWeights[i])
-            if deltaWeightAbs > greatestDelta:
-                greatestDelta = deltaWeightAbs
-                plateIDWithGreatestDelta = i + 1
-        return Position(self.gondolaID, self.shelfID, plateIDWithGreatestDelta)
+            delta_weight_abs = abs(self.deltaWeights[i])
+            if delta_weight_abs > greatest_delta:
+                greatest_delta = delta_weight_abs
+                plate_id_with_greatest_delta = i + 1
+        return Position(self.gondolaID, self.shelfID, plate_id_with_greatest_delta)
 
     # for one event, return its all possible (gondola/shelf/plate) above threshold
-    def getEventAllPositions(self, bk):
-        possiblePositions = []
-        # Magic number: A plate take into account only when plate's deltaWeight is more than 20% of shelf's deltaWeight
-        threshold = 0.2
-        thresholdWeight = threshold * abs(self.deltaWeight)
+    def get_event_all_positions(self):
+        possible_positions = []
+        threshold_weight = THRESHOLD * abs(self.deltaWeight)
         for i in range(len(self.deltaWeights)):
-            deltaWeightAbs = abs(self.deltaWeights[i])
-            if deltaWeightAbs >= thresholdWeight:
-                plateID = i + 1
-                possiblePositions.append(
-                    Position(self.gondolaID, self.shelfID, plateID)
+            delta_weight_abs = abs(self.deltaWeights[i])
+            if delta_weight_abs >= threshold_weight:
+                plate_id = i + 1
+                possible_positions.append(
+                    Position(self.gondolaID, self.shelfID, plate_id)
                 )
-        return possiblePositions
+        return possible_positions
 
-    def getEventCoordinates(self, bk):
-        position = self.getEventMostPossiblePosition(bk)
-        coordinates = bk.get3DCoordinatesForPlate(
+    def get_event_coordinates(self):
+        position = self.get_event_most_possible_position()
+        coordinates = self.get_3d_coordinates_for_plate(
             position.gondola, position.shelf, position.plate
         )
         return coordinates

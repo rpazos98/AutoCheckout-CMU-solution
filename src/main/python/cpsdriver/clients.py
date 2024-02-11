@@ -50,7 +50,7 @@ class CpsMongoClient:
         collection = "products"
         filt = {
             "product_id.barcode_type": product_id.barcode_type,
-            "product_id.id": product_id.barcode,
+            "product_id.id": product_id.product,
         }
         cursor = self.find(db_name, collection, filt)
         return [DocObjectCodec.decode(doc, collection) for doc in cursor]
@@ -60,7 +60,7 @@ class CpsMongoClient:
         collection = "planogram"
         filt = {
             "planogram_product_id.barcode_type": product_id.barcode_type,
-            "planogram_product_id.id": product_id.barcode,
+            "planogram_product_id.id": product_id.product,
         }
         cursor = self.find(db_name, collection, filt)
         return [DocObjectCodec.decode(doc, collection) for doc in cursor]
