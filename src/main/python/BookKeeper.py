@@ -1,15 +1,7 @@
-import io
-import json
-import os
-
-from PIL import Image
-
 from Constants import INCH_TO_METER
 from Coordinates import Coordinates
 from Target import Target
 from config import *
-from cpsdriver import codec
-from cpsdriver.codec import DocObjectCodec
 
 
 def get_translation(meta):
