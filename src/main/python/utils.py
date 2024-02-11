@@ -1,8 +1,11 @@
+import json
+import os
+
+from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
 from Position import Position
+from ProductExtended import ProductExtended
 from cpsdriver.codec import Product
 from math_utils import *
-from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
-from ProductExtended import ProductExtended
 
 BODY_THRESH = 0.8
 
@@ -255,3 +258,56 @@ def get_product_ids_from_position_3d(gondola_idx, shelf_idx, plate_idx, planogra
 def get_product_positions(product_id, products_cache):
     product = get_product_by_id(product_id, products_cache)
     return product.positions
+
+
+def build_dicts_from_store_meta(gondolas_meta, shelves_meta, plates_meta):
+    gondolas_dict = {}
+    shelves_dict = {}
+    plates_dict = {}
+
+    for gondola_meta in gondolas_meta:
+        gondolas_dict[str(gondola_meta["id"]["id"])] = gondola_meta
+
+    for shelf_meta in shelves_meta:
+        ids = shelf_meta["id"]
+        gondola_id = ids["gondola_id"]["id"]
+        shelf_id = ids["shelf_index"]
+        shelf_meta_index_key = str(gondola_id) + "_" + str(shelf_id)
+        shelves_dict[shelf_meta_index_key] = shelf_meta
+
+    for plate_meta in plates_meta:
+        ids = plate_meta["id"]
+        gondola_id = ids["shelf_id"]["gondola_id"]["id"]
+        shelf_id = ids["shelf_id"]["shelf_index"]
+        plate_id = ids["plate_index"]
+        plate_meta_index_key = (
+            str(gondola_id) + "_" + str(shelf_id) + "_" + str(plate_id)
+        )
+        plates_dict[plate_meta_index_key] = plate_meta
+
+    return gondolas_dict, shelves_dict, plates_dict
+
+
+def get_test_start_time(plate_cursor, dbname):
+    video_start_time = get_clean_start_time(dbname)
+    db_start_time = plate_cursor.find_one(sort=[("timestamp", 1)])["timestamp"]
+    if video_start_time - db_start_time >= 10:
+        return video_start_time
+    else:
+        return 0
+
+
+def get_clean_start_time(dbname):
+    test_case_start_time_json_file_path = "src/main/resources/TestCaseStartTime.json"
+    if os.path.exists(test_case_start_time_json_file_path):
+        with open(test_case_start_time_json_file_path, "r") as f:
+            test_start_time = json.load(f)
+        if dbname not in test_start_time:
+            return 0
+        return test_start_time[dbname]
+    else:
+        print(
+            "!!!WARNING: Didn't find competition/TestCaseStartTime.json, results might not be accurate. "
+            "Please run TimeTravel.py to get the json file"
+        )
+        return 0

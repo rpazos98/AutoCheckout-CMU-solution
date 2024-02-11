@@ -4,7 +4,6 @@ import os
 
 from PIL import Image
 
-import GroundTruth as GT
 from Constants import INCH_TO_METER
 from Coordinates import Coordinates
 from Target import Target
@@ -16,37 +15,26 @@ from cpsdriver.codec import DocObjectCodec
 class BookKeeper:
     def __init__(
         self,
-        dbname,
         planogram,
-        products_cursor,
-        plate_cursor,
         targets_cursor,
         frame_cursor,
         products_id_from_products_table,
+        gondolas_dict,
+        shelves_dict,
+        plates_dict,
     ):
-        # Access instance DB
-        self.__dbname = dbname
-
         # Reference to DB collections
-        self.products_cursor = products_cursor  # find one y find
-        self.plate_cursor = plate_cursor  # find one
         self.targets_cursor = targets_cursor  # find con filtro
         self.frame_cursor = frame_cursor  # find con filtro
 
-        ## puedo meter un find con parametros opcionales y
-
-        self._planogram = planogram
-        self._productsCache = {}
+        self.planogram = planogram
 
         # store meta
-        self._gondolasDict = {}
-        self._shelvesDict = {}
-        self._platesDict = {}
+        self._gondolasDict = gondolas_dict
+        self._shelvesDict = shelves_dict
+        self._platesDict = plates_dict
 
-        self.productIDsFromPlanogramTable = set()
         self.productIDsFromProductsTable = products_id_from_products_table
-
-        self._buildDictsFromStoreMeta()
 
     def addProduct(self, positions, productExtended):
         for position in positions:
@@ -55,7 +43,7 @@ class BookKeeper:
                 position.shelf,
                 position.plate,
             )
-            self._planogram[gondolaID - 1][shelfID - 1][plateID - 1].add(
+            self.planogram[gondolaID - 1][shelfID - 1][plateID - 1].add(
                 productExtended.product
             )
             # Update product position
@@ -234,9 +222,6 @@ class BookKeeper:
             )
         return targets
 
-    def _findOptimalPlateForEvent(self, event):
-        return 1
-
     def get3DCoordinatesForPlate(self, gondola, shelf, plate):
         gondolaMetaKey = str(gondola)
         shelfMetaKey = str(gondola) + "_" + str(shelf)
@@ -279,47 +264,6 @@ class BookKeeper:
 
     def _getTranslation(self, meta):
         return meta["coordinates"]["transform"]["translation"]
-
-    def _buildDictsFromStoreMeta(self):
-        for gondolaMeta in GT.gondolasMeta:
-            self._gondolasDict[str(gondolaMeta["id"]["id"])] = gondolaMeta
-
-        for shelfMeta in GT.shelvesMeta:
-            IDs = shelfMeta["id"]
-            gondolaID = IDs["gondola_id"]["id"]
-            shelfID = IDs["shelf_index"]
-            shelfMetaIndexKey = str(gondolaID) + "_" + str(shelfID)
-            self._shelvesDict[shelfMetaIndexKey] = shelfMeta
-
-        for plateMeta in GT.platesMeta:
-            IDs = plateMeta["id"]
-            gondolaID = IDs["shelf_id"]["gondola_id"]["id"]
-            shelfID = IDs["shelf_id"]["shelf_index"]
-            plateID = IDs["plate_index"]
-            plateMetaIndexKey = str(gondolaID) + "_" + str(shelfID) + "_" + str(plateID)
-            self._platesDict[plateMetaIndexKey] = plateMeta
-
-    def getCleanStartTime(self):
-        testCaseStartTimeJSONFilePath = "src/main/resources/TestCaseStartTime.json"
-        if os.path.exists(testCaseStartTimeJSONFilePath):
-            with open(testCaseStartTimeJSONFilePath, "r") as f:
-                testStartTime = json.load(f)
-            if self.__dbname not in testStartTime:
-                return 0
-            return testStartTime[self.__dbname]
-        else:
-            print(
-                "!!!WARNING: Didn't find competition/TestCaseStartTime.json, results might not be accurate. Please run TimeTravel.py to get the json file"
-            )
-            return 0
-
-    def getTestStartTime(self):
-        videoStartTime = self.getCleanStartTime()
-        dbStartTime = self.plate_cursor.find_one(sort=[("timestamp", 1)])["timestamp"]
-        if videoStartTime - dbStartTime >= 10:
-            return videoStartTime
-        else:
-            return 0
 
 
 # class Frame:

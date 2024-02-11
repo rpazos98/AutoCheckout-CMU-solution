@@ -38,7 +38,7 @@ class ProductScore:
             self.arrangementScore,
             self.weightScore,
             self.get_total_score(),
-            product.weight,
+            self.product.weight,
         )
 
 
@@ -74,8 +74,8 @@ class ScoreCalculator:
     def get_top_k(self, k):
         return self.productScoreRank[:k]
 
-    def get_score_by_product_id(self, productID):
-        return self.productScoreDict[productID]
+    def get_score_by_product_id(self, product_id):
+        return self.productScoreDict[product_id]
 
     # arrangement probability (with different weight sensed on different plate)
     def __calculate_arrangement_score(self):

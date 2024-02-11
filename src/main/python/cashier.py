@@ -9,6 +9,7 @@ from ScoreCalculate import *
 from WeightTrigger import WeightTrigger
 from config import *
 from cpsdriver.codec import Targets, DocObjectCodec
+import GroundTruth
 from utils import *
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
@@ -84,19 +85,22 @@ class Cashier:
             products_cursor
         )
         planogram = load_planogram(planogram_cursor, products_cursor, products_cache)
+        gondolas_dict, shelves_dict, plates_dict = build_dicts_from_store_meta(
+            GroundTruth.gondolas_meta, GroundTruth.shelves_meta, GroundTruth.plates_meta
+        )
 
         bookkeeper = BK.BookKeeper(
-            dbName,
             planogram,
-            products_cursor,
-            plate_cursor,
             targets_cursor,
             frame_cursor,
             product_ids_from_products_table,
+            gondolas_dict,
+            shelves_dict,
+            plates_dict,
         )
 
-        weightTrigger = WeightTrigger(
-            bookkeeper.getTestStartTime(),
+        weight_trigger = WeightTrigger(
+            get_test_start_time(plate_cursor, dbName),
             list(
                 map(
                     lambda x: DocObjectCodec.decode(doc=x, collection="plate_data"),
@@ -113,11 +117,11 @@ class Cashier:
             weight_shelf_std,
             weight_plate_mean,
             weight_plate_std,
-        ) = weightTrigger.get_moving_weight()
+        ) = weight_trigger.get_moving_weight()
 
         number_gondolas = len(weight_shelf_mean)
         # reduce timestamp
-        timestamps = weightTrigger.get_agg_timestamps()
+        timestamps = weight_trigger.get_agg_timestamps()
         for i in range(number_gondolas):
             timestamps[i] = timestamps[i][30:-29]
 
@@ -129,13 +133,13 @@ class Cashier:
             assert timestamps_count == weight_plate_mean[i].shape[2]
             assert timestamps_count == weight_plate_std[i].shape[2]
 
-        events = weightTrigger.detect_weight_events(
+        events = weight_trigger.detect_weight_events(
             weight_shelf_mean,
             weight_shelf_std,
             weight_plate_mean,
             timestamps,
         )
-        events = weightTrigger.splitEvents(events)
+        events = weight_trigger.splitEvents(events)
         events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
 
         viz = VizUtils(

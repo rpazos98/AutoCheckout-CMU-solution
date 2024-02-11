@@ -61,8 +61,8 @@ class DatasetGT(Serializable):
 
 
 with open("src/main/resources/store_meta/Gondolas.json") as f:
-    gondolasMeta = json.load(f)["gondolas"]
+    gondolas_meta = json.load(f)["gondolas"]
 with open("src/main/resources/store_meta/Shelves.json") as f:
-    shelvesMeta = json.load(f)["shelves"]
+    shelves_meta = json.load(f)["shelves"]
 with open("src/main/resources/store_meta/Plates.json") as f:
-    platesMeta = json.load(f)["plates"]
+    plates_meta = json.load(f)["plates"]
