@@ -1,6 +1,8 @@
 from Position import Position
 from cpsdriver.codec import Product
 from math_utils import *
+from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
+from ProductExtended import ProductExtended
 
 BODY_THRESH = 0.8
 
@@ -165,38 +167,91 @@ def rolling_window(a, window):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
-def load_planogram(self):
+def load_planogram(planogram_cursor, products_cursor, products_cache):
     planogram = np.empty((NUM_GONDOLA, NUM_SHELF, NUM_PLATE), dtype=object)
+    product_ids_from_planogram_table = set()
 
-    for item in self.planogram_data:
+    for item in planogram_cursor:
 
         if "id" not in item["planogram_product_id"]:
             continue
-        productID = item["planogram_product_id"]["id"]
-        if productID == "":
+        product_id = item["planogram_product_id"]["id"]
+        if product_id == "":
             continue
-        productItem = self.products_cursor.find_one(
+        product_item = products_cursor.find_one(
             {
-                "product_id.id": productID,
+                "product_id.id": product_id,
             }
         )
-        product = Product.from_dict(productItem)
+        product = Product.from_dict(product_item)
         if product.weight == 0.0:
             continue
 
-        productExtended = self.getProductByID(productID)
+        product_extended = get_product_by_id(product_id, products_cache)
         for plate in item["plate_ids"]:
             shelf = plate["shelf_id"]
             gondola = shelf["gondola_id"]
-            gondolaID = gondola["id"]
-            shelfID = shelf["shelf_index"]
-            plateID = plate["plate_index"]
+            gondola_id = gondola["id"]
+            shelf_id = shelf["shelf_index"]
+            plate_id = plate["plate_index"]
 
-            if planogram[gondolaID - 1][shelfID - 1][plateID - 1] is None:
-                planogram[gondolaID - 1][shelfID - 1][plateID - 1] = set()
-            planogram[gondolaID - 1][shelfID - 1][plateID - 1].add(productID)
-            self.productIDsFromPlanogramTable.add(productID)
+            if planogram[gondola_id - 1][shelf_id - 1][plate_id - 1] is None:
+                planogram[gondola_id - 1][shelf_id - 1][plate_id - 1] = set()
+            planogram[gondola_id - 1][shelf_id - 1][plate_id - 1].add(product_id)
+            product_ids_from_planogram_table.add(product_id)
 
-            productExtended.positions.add(Position(gondolaID, shelfID, plateID))
+            product_extended.positions.add(Position(gondola_id, shelf_id, plate_id))
 
     return planogram
+
+
+def get_product_by_id(product_id, products_cache):
+    if product_id in products_cache:
+        return products_cache[product_id]
+    return None
+
+
+def build_all_products_cache(products_cursor):
+
+    products_cache = {}
+    product_ids_from_products_table = set()
+
+    for item in products_cursor.find():
+        product = Product.from_dict(item)
+        if product.weight == 0.0:
+            continue
+
+        product_extended = ProductExtended(product)
+
+        # Workaround for database error: [JD] Good catch, the real weight is 538g,
+        # Our store operator made a mistake when inputing the product in :scales:
+        if product_extended.get_barcode() == "898999010007":
+            product_extended.weight = 538.0
+
+        # Workaround for database error: [JD] 1064g for the large one (ACQUA PANNA PET MINERAL DRINK), 800g for the small one
+        if product_extended.get_barcode() == "041508922487":
+            product_extended.weight = 1064.0
+
+        products_cache[product_extended.get_barcode()] = product_extended
+        product_ids_from_products_table.add(product_extended.get_barcode())
+
+    return products_cache, product_ids_from_products_table
+
+
+def get_product_ids_from_position_2d(gondola_idx, shelf_idx, planogram):
+    # remove Nones
+    product_ids = set()
+    for productIDSetForPlate in planogram[gondola_idx - 1][shelf_idx - 1]:
+        if productIDSetForPlate is None:
+            continue
+        product_ids = product_ids.union(productIDSetForPlate)
+    return product_ids
+
+
+def get_product_ids_from_position_3d(gondola_idx, shelf_idx, plate_idx, planogram):
+    return planogram[gondola_idx - 1][shelf_idx - 1][plate_idx - 1]
+
+
+def get_product_positions(product_id, products_cache):
+    product = get_product_by_id(product_id, products_cache)
+    return product.positions

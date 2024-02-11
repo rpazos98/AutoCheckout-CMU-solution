@@ -1,34 +1,33 @@
-import numpy as np
-from pymongo import MongoClient
-import GroundTruth as GT
 import io
-from PIL import Image
-from config import *
 import json
 import os
 
-from cpsdriver.codec import Product, DocObjectCodec
-from cpsdriver import codec
-from Position import Position
-from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE, INCH_TO_METER
+from PIL import Image
+
+import GroundTruth as GT
+from Constants import INCH_TO_METER
 from Coordinates import Coordinates
+from Target import Target
+from config import *
+from cpsdriver import codec
+from cpsdriver.codec import DocObjectCodec
 
 
 class BookKeeper:
     def __init__(
         self,
         dbname,
-        planogram_data,
+        planogram,
         products_cursor,
         plate_cursor,
         targets_cursor,
         frame_cursor,
+        products_id_from_products_table,
     ):
         # Access instance DB
         self.__dbname = dbname
 
         # Reference to DB collections
-        self.planogram_data = planogram_data
         self.products_cursor = products_cursor  # find one y find
         self.plate_cursor = plate_cursor  # find one
         self.targets_cursor = targets_cursor  # find con filtro
@@ -36,7 +35,7 @@ class BookKeeper:
 
         ## puedo meter un find con parametros opcionales y
 
-        self._planogram = None
+        self._planogram = planogram
         self._productsCache = {}
 
         # store meta
@@ -45,49 +44,9 @@ class BookKeeper:
         self._platesDict = {}
 
         self.productIDsFromPlanogramTable = set()
-        self.productIDsFromProductsTable = set()
-
-        # Meta generation
-        self.__buildAllProductsCache()
-        self._planogram = self.__loadPlanogram()
+        self.productIDsFromProductsTable = products_id_from_products_table
 
         self._buildDictsFromStoreMeta()
-
-    def __loadPlanogram(self):
-        planogram = np.empty((NUM_GONDOLA, NUM_SHELF, NUM_PLATE), dtype=object)
-
-        for item in self.planogram_data:
-
-            if "id" not in item["planogram_product_id"]:
-                continue
-            productID = item["planogram_product_id"]["id"]
-            if productID == "":
-                continue
-            productItem = self.products_cursor.find_one(
-                {
-                    "product_id.id": productID,
-                }
-            )
-            product = Product.from_dict(productItem)
-            if product.weight == 0.0:
-                continue
-
-            productExtended = self.getProductByID(productID)
-            for plate in item["plate_ids"]:
-                shelf = plate["shelf_id"]
-                gondola = shelf["gondola_id"]
-                gondolaID = gondola["id"]
-                shelfID = shelf["shelf_index"]
-                plateID = plate["plate_index"]
-
-                if planogram[gondolaID - 1][shelfID - 1][plateID - 1] is None:
-                    planogram[gondolaID - 1][shelfID - 1][plateID - 1] = set()
-                planogram[gondolaID - 1][shelfID - 1][plateID - 1].add(productID)
-                self.productIDsFromPlanogramTable.add(productID)
-
-                productExtended.positions.add(Position(gondolaID, shelfID, plateID))
-
-        return planogram
 
     def addProduct(self, positions, productExtended):
         for position in positions:
@@ -97,43 +56,11 @@ class BookKeeper:
                 position.plate,
             )
             self._planogram[gondolaID - 1][shelfID - 1][plateID - 1].add(
-                productExtended.barcode
+                productExtended.product
             )
             # Update product position
             if position not in productExtended.positions:
                 productExtended.positions.add(position)
-
-    def __buildAllProductsCache(self):
-        for item in self.products_cursor.find():
-            product = Product.from_dict(item)
-            if product.weight == 0.0:
-                continue
-
-            productExtended = ProductExtended()
-            productExtended.barcode_type = product.product_id.barcode_type
-            productExtended.barcode = product.product_id.barcode
-            productExtended.name = product.name
-            productExtended.thumbnail = product.thumbnail
-            productExtended.price = product.price
-            productExtended.weight = product.weight
-            productExtended.positions = set()
-
-            # Workaround for database error: [JD] Good catch, the real weight is 538g,
-            # Our store operator made a mistake when inputing the product in :scales:
-            if productExtended.barcode == "898999010007":
-                productExtended.weight = 538.0
-
-            # Workaround for database error: [JD] 1064g for the large one (ACQUA PANNA PET MINERAL DRINK), 800g for the small one
-            if productExtended.barcode == "041508922487":
-                productExtended.weight = 1064.0
-
-            self._productsCache[productExtended.barcode] = productExtended
-            self.productIDsFromProductsTable.add(productExtended.barcode)
-
-    def getProductByID(self, productID):
-        if productID in self._productsCache:
-            return self._productsCache[productID]
-        return None
 
     def getFramesForEvent(self, event):
         timeBegin = event.triggerBegin
@@ -372,22 +299,6 @@ class BookKeeper:
             plateMetaIndexKey = str(gondolaID) + "_" + str(shelfID) + "_" + str(plateID)
             self._platesDict[plateMetaIndexKey] = plateMeta
 
-    def getProductIDsFromPosition_2D(self, gondolaIdx, shelfIdx):
-        # remove Nones
-        productIDs = set()
-        for productIDSetForPlate in self._planogram[gondolaIdx - 1][shelfIdx - 1]:
-            if productIDSetForPlate is None:
-                continue
-            productIDs = productIDs.union(productIDSetForPlate)
-        return productIDs
-
-    def getProductIDsFromPosition_3D(self, gondolaIdx, shelfIdx, plateIdx):
-        return self._planogram[gondolaIdx - 1][shelfIdx - 1][plateIdx - 1]
-
-    def getProductPositions(self, productID):
-        product = self.getProductByID(productID)
-        return product.positions
-
     def getCleanStartTime(self):
         testCaseStartTimeJSONFilePath = "src/main/resources/TestCaseStartTime.json"
         if os.path.exists(testCaseStartTimeJSONFilePath):
@@ -421,59 +332,3 @@ Attributes:
     self.score: FLOAT. Confidence score of the target existence.
     self.valid_entrance: BOOL. Whether this target is a valid entrance at the store.
 """
-
-
-class Target:
-    def __init__(self, id, head, left_hand=None, right_hand=None, valid_entrance=True):
-        self.head = head
-        self.id = id
-        self.valid_entrance = valid_entrance
-
-        self.left_hand = None
-        self.right_hand = None
-        if left_hand:
-            self.left_hand = left_hand
-        if right_hand:
-            self.right_hand = right_hand
-
-    def update(self, id, head, left_hand=None, right_hand=None, valid_entrance=True):
-        self.head = head
-        self.id = id
-        self.valid_entrance = valid_entrance
-
-        self.left_hand = None
-        self.right_hand = None
-        if left_hand:
-            self.left_hand = left_hand
-        if right_hand:
-            self.right_hand = right_hand
-
-    def __str__(self):
-        return "Target(ID: {})".format(str(self.id))
-
-
-class ProductExtended:
-    barcode_type: str
-    barcode: str
-    name: str
-    thumbnail: str
-    price: float
-    weight: float
-    positions: list
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return (
-            "Product(barcode_type=%s, barcode=%s, name=%s, thumbnail=%s, price=%f, weight=%f, positions=%s)"
-            % (
-                self.barcode_type,
-                self.barcode,
-                self.name,
-                self.thumbnail,
-                self.price,
-                self.weight,
-                str(self.positions),
-            )
-        )

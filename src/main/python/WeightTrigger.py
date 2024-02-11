@@ -262,14 +262,14 @@ class WeightTrigger:
             productIDsOnThisShelf = self.get_product_id_from_position_2d(
                 gondolaID, shelfID
             )
-            minWeightOnThisShelf = float("inf")
+            min_weight_on_this_shelf = float("inf")
             for productID in productIDsOnThisShelf:
                 productExtended = self.get_product_by_id(productID)
-                if productExtended.weight < minWeightOnThisShelf:
-                    minWeightOnThisShelf = productExtended.weight
+                if productExtended.product.weight < min_weight_on_this_shelf:
+                    min_weight_on_this_shelf = productExtended.product.weight
 
-            plateActiveThreshold = minWeightOnThisShelf / 3.0
-            # print (minWeightOnThisShelf)
+            plateActiveThreshold = min_weight_on_this_shelf / 3.0
+            # print (min_weight_on_this_shelf)
             # print (plateActiveThreshold)
             for i in range(numberOfPlates):
                 if absDeltaWeights[i] >= plateActiveThreshold:
