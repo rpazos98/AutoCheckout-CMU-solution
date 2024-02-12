@@ -1,4 +1,4 @@
-from Constants import ARRANGEMENT_CONTRIBUTION, WEIGHT_CONTRIBUTION
+from constants import ARRANGEMENT_CONTRIBUTION, WEIGHT_CONTRIBUTION
 
 
 class ProductScore:

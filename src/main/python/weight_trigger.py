@@ -1,6 +1,6 @@
 import numpy as np
 
-from data.PickupEvents import PickUpEvent
+from data.pickup_events import PickUpEvent
 from utils import init_1d_array, rolling_window
 
 

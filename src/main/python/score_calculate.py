@@ -1,11 +1,11 @@
-from BookKeeper import BookKeeper
-from WeightTrigger import PickUpEvent
-import math_utils
-from ProductScore import ProductScore
+from book_keeper import BookKeeper
+from weight_trigger import PickUpEvent
+from product_score import ProductScore
 from utils import (
     get_product_ids_from_position_2d,
     get_product_positions,
     get_product_by_id,
+    area_under_two_gaussians,
 )
 
 sigmaForEventWeight = 10.0  # gram
@@ -83,7 +83,7 @@ class ScoreCalculator:
             product_weight = get_product_by_id(
                 productScore.product.get_barcode(), self.products_cache
             ).product.weight
-            productScore.weightScore = math_utils.areaUnderTwoGaussians(
+            productScore.weightScore = area_under_two_gaussians(
                 delta_weight_for_event,
                 sigmaForEventWeight,
                 product_weight,

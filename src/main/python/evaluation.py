@@ -1,8 +1,8 @@
 # Code for Evaluation
-from BookKeeper import *
+from book_keeper import *
 import json
 
-from Constants import DEBUG, VERBOSE
+from constants import DEBUG, VERBOSE
 from cashier import process
 
 """

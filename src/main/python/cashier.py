@@ -5,11 +5,10 @@ from pymongo import MongoClient
 # from moviepy.editor import *
 # from moviepy.video.fx.crop import crop
 
-from ScoreCalculate import *
-from WeightTrigger import WeightTrigger
+from score_calculate import *
+from weight_trigger import WeightTrigger
 from cpsdriver.codec import Targets, DocObjectCodec
-import GroundTruth
-from Constants import (
+from constants import (
     VERBOSE,
     VIZ,
     ASSOCIATION_TYPE,
@@ -19,7 +18,7 @@ from Constants import (
 from utils import *
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
-from viz_utils import VizUtils
+from video.viz_utils import VizUtils
 
 # import cv2
 # import mediapipe as mp
@@ -69,6 +68,12 @@ SHOULD_GRAPH = False
 
 
 def process(db_name):
+    with open("src/main/resources/store_meta/Gondolas.json") as f:
+        gondolas_meta = json.load(f)["gondolas"]
+    with open("src/main/resources/store_meta/Shelves.json") as f:
+        shelves_meta = json.load(f)["shelves"]
+    with open("src/main/resources/store_meta/Plates.json") as f:
+        plates_meta = json.load(f)["plates"]
 
     # Access instance DB
     _mongoClient = MongoClient("mongodb://localhost:27017")
@@ -88,10 +93,10 @@ def process(db_name):
     )
     planogram = load_planogram(planogram_cursor, products_cursor, products_cache)
     gondolas_dict, shelves_dict, plates_dict = build_dicts_from_store_meta(
-        GroundTruth.gondolas_meta, GroundTruth.shelves_meta, GroundTruth.plates_meta
+        gondolas_meta, shelves_meta, plates_meta
     )
 
-    bookkeeper = BK.BookKeeper(
+    bookkeeper = BookKeeper(
         planogram,
         lambda x: targets_cursor.find(x),
         lambda x: frame_cursor.find(x),
