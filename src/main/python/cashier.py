@@ -9,13 +9,13 @@ from constants import (
     CLOSEST_ASSOCIATION,
 )
 from cpsdriver.codec import Targets, DocObjectCodec
-from score_calculate import *
-from book_keeper import BookKeeper
+from computations.score_calculator import *
+from computations.book_keeper import BookKeeper
 from utils import *
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
 from video.viz_utils import VizUtils
-from weight_trigger import WeightTrigger
+from computations.weight_trigger import WeightTrigger
 
 # import moviepy
 # from moviepy.editor import *

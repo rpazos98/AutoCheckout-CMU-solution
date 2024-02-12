@@ -316,25 +316,25 @@ def get_3d_coordinates_for_plate(
     # TODO: rotation values for one special gondola
     absolute_3d = Coordinates(0, 0, 0)
     gondola_translation = get_translation(gondolas_dict[gondola_meta_key])
-    absolute_3d.translateBy(
+    absolute_3d.translate_by(
         gondola_translation["x"], gondola_translation["y"], gondola_translation["z"]
     )
 
     if gondola == 5:
         # rotate by 90 degrees
         shelf_translation = get_translation(shelves_dict[shelf_meta_key])
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             -shelf_translation["y"], shelf_translation["x"], shelf_translation["z"]
         )
 
         plate_translation = get_translation(plates_dict[plate_meta_key])
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             -plate_translation["y"], plate_translation["x"], plate_translation["z"]
         )
 
     else:
         shelf_translation = get_translation(shelves_dict[shelf_meta_key])
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             shelf_translation["x"], shelf_translation["y"], shelf_translation["z"]
         )
 
@@ -342,7 +342,7 @@ def get_3d_coordinates_for_plate(
         if key_ is None:
             return absolute_3d
         plate_translation = get_translation(key_)
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             plate_translation["x"], plate_translation["y"], plate_translation["z"]
         )
 
