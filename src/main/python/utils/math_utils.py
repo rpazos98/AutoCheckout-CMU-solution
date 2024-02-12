@@ -3,10 +3,6 @@ import math
 import numpy as np
 from scipy.stats import norm
 
-from constants import BODY_THRESH
-from cpsdriver.codec import Product
-from data.product_extended import ProductExtended
-
 
 def area_under_two_gaussians(m1, std1, m2, std2):
     if m1 > m2:

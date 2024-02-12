@@ -3,6 +3,9 @@ import json
 
 from pymongo import MongoClient
 
+from computations.book_keeper import BookKeeper
+from computations.score_calculator import *
+from computations.weight_trigger import WeightTrigger
 from constants import (
     VERBOSE,
     VIZ,
@@ -11,8 +14,6 @@ from constants import (
     CLOSEST_ASSOCIATION,
 )
 from cpsdriver.codec import Targets, DocObjectCodec
-from computations.score_calculator import *
-from computations.book_keeper import BookKeeper
 from utils.coordinate_utils import get_3d_coordinates_for_plate
 from utils.planogram_utils import load_planogram
 from utils.product_utils import (
@@ -29,7 +30,6 @@ from utils.time_utils import get_test_start_time
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
 from video.viz_utils import VizUtils
-from computations.weight_trigger import WeightTrigger
 
 # import moviepy
 # from moviepy.editor import *
