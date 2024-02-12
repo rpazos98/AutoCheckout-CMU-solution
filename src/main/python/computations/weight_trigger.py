@@ -1,7 +1,6 @@
 import numpy as np
 
-from cpsdriver.codec import DocObjectCodec
-from PickupEvents import PickUpEvent
+from data.pickup_event import PickUpEvent
 from utils import init_1d_array, rolling_window
 
 

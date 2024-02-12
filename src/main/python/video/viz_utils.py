@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
-
-from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
+from constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
 
 logging.basicConfig(
     level=logging.INFO,

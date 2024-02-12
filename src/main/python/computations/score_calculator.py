@@ -1,49 +1,18 @@
-from BookKeeper import BookKeeper
-from WeightTrigger import PickUpEvent
-import math_utils
+from data.pickup_event import PickUpEvent
+from data.product_score import ProductScore
 from utils import (
     get_product_ids_from_position_2d,
     get_product_positions,
     get_product_by_id,
+    area_under_two_gaussians,
 )
+
 
 sigmaForEventWeight = 10.0  # gram
 sigmaForProductWeight = 10.0  # gram
-arrangementContribution = 0.8
-weightContribution = 1 - arrangementContribution
-
-
-class ProductScore:
-    arrangementScore: float
-    weightScore: float
-    product: str
-
-    def __init__(self, product):
-        self.product = product
-        self.arrangementScore = 0.0
-        self.weightScore = 0.0
-
-    def get_total_score(self):
-        return (
-            arrangementContribution * self.arrangementScore
-            + weightContribution * self.weightScore
-        )
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return "[%s] arrangementScore=%f weightScore=%f totalScore=%f, weight=%f" % (
-            self.product,
-            self.arrangementScore,
-            self.weightScore,
-            self.get_total_score(),
-            self.product.weight,
-        )
 
 
 class ScoreCalculator:
-
     # [ProductScore]
     productScoreRank: list
 
@@ -113,7 +82,7 @@ class ScoreCalculator:
             product_weight = get_product_by_id(
                 productScore.product.get_barcode(), self.products_cache
             ).product.weight
-            productScore.weightScore = math_utils.areaUnderTwoGaussians(
+            productScore.weightScore = area_under_two_gaussians(
                 delta_weight_for_event,
                 sigmaForEventWeight,
                 product_weight,

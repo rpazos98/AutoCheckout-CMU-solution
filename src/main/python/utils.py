@@ -1,13 +1,16 @@
 import json
+import math
 import os
 
-from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
-from Position import Position
-from ProductExtended import ProductExtended
+import numpy as np
+from scipy.stats import norm
+
+from constants import BODY_THRESH
+from constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
 from cpsdriver.codec import Product
-from math_utils import *
-from Constants import BODY_THRESH
-from Coordinates import Coordinates
+from data.coordinates import Coordinates
+from data.position import Position
+from data.product_extended import ProductExtended
 
 """
 Helper functions to associate targets to a product with head ONLY
@@ -206,7 +209,6 @@ def get_product_by_id(product_id, products_cache):
 
 
 def build_all_products_cache(products_cursor):
-
     products_cache = {}
     product_ids_from_products_table = set()
 
@@ -299,7 +301,7 @@ def get_clean_start_time(dbname):
     else:
         print(
             "!!!WARNING: Didn't find competition/TestCaseStartTime.json, results might not be accurate. "
-            "Please run TimeTravel.py to get the json file"
+            "Please run time_travel.py to get the json file"
         )
         return 0
 
@@ -314,25 +316,25 @@ def get_3d_coordinates_for_plate(
     # TODO: rotation values for one special gondola
     absolute_3d = Coordinates(0, 0, 0)
     gondola_translation = get_translation(gondolas_dict[gondola_meta_key])
-    absolute_3d.translateBy(
+    absolute_3d.translate_by(
         gondola_translation["x"], gondola_translation["y"], gondola_translation["z"]
     )
 
     if gondola == 5:
         # rotate by 90 degrees
         shelf_translation = get_translation(shelves_dict[shelf_meta_key])
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             -shelf_translation["y"], shelf_translation["x"], shelf_translation["z"]
         )
 
         plate_translation = get_translation(plates_dict[plate_meta_key])
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             -plate_translation["y"], plate_translation["x"], plate_translation["z"]
         )
 
     else:
         shelf_translation = get_translation(shelves_dict[shelf_meta_key])
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             shelf_translation["x"], shelf_translation["y"], shelf_translation["z"]
         )
 
@@ -340,7 +342,7 @@ def get_3d_coordinates_for_plate(
         if key_ is None:
             return absolute_3d
         plate_translation = get_translation(key_)
-        absolute_3d.translateBy(
+        absolute_3d.translate_by(
             plate_translation["x"], plate_translation["y"], plate_translation["z"]
         )
 
@@ -349,3 +351,28 @@ def get_3d_coordinates_for_plate(
 
 def get_translation(meta):
     return meta["coordinates"]["transform"]["translation"]
+
+
+def area_under_two_gaussians(m1, std1, m2, std2):
+    if m1 > m2:
+        (m1, std1, m2, std2) = (m2, std2, m1, std1)
+    a = 1 / (2 * std1**2) - 1 / (2 * std2**2)
+    b = m2 / (std2**2) - m1 / (std1**2)
+    c = m1**2 / (2 * std1**2) - m2**2 / (2 * std2**2) - np.log(std2 / std1)
+    point_of_intersect = np.roots([a, b, c])[0]
+    area = norm.cdf(point_of_intersect, m2, std2) + (
+        1.0 - norm.cdf(point_of_intersect, m1, std1)
+    )
+
+    return area
+
+
+"""
+Function to calculate distance of two 3D coordinates
+"""
+
+
+def calculate_distance3D(loc_a, loc_b):
+    return math.sqrt(
+        (loc_a.x - loc_b.x) ** 2 + (loc_a.y - loc_b.y) ** 2 + (loc_a.z - loc_b.z) ** 2
+    )

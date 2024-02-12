@@ -3,11 +3,11 @@ import random
 import shutil
 from pathlib import Path
 
+import albumentations as A
 import numpy as np
 from PIL import Image
 from cv2 import cv2
 from pascal_voc_writer import Writer
-import albumentations as A
 
 test_cases = ["BASELINE-8"]
 SKU_EXAMPLE_MIN = 1000

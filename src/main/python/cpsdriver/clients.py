@@ -1,13 +1,11 @@
-import logging
 import json
+import logging
 from os import path
 
-from pymongo import MongoClient
 import requests
+from cpsdriver.codec import DocObjectCodec
+from pymongo import MongoClient
 from sh import mongorestore
-
-from src.main.python.cpsdriver.codec import DocObjectCodec
-
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
