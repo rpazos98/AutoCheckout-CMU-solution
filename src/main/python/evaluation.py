@@ -1,7 +1,9 @@
 # Code for Evaluation
 from BookKeeper import *
-from cashier import Cashier
 import json
+
+from Constants import DEBUG, VERBOSE
+from cashier import process
 
 """
 Groundtruth file contains pickup event and putback event separately.
@@ -66,19 +68,18 @@ def evaluate_inventory(dbs, gt_path):
         db_pred_counts, db_gt_counts = 0, 0
 
         ########## Generate Prediction ##########
-        dbName = dbs[i]
-        myCashier = Cashier()
-        receipts = myCashier.process(dbName)
+        db_name = dbs[i]
+        receipts = process(db_name)
 
         ########## Evaluate Ground truth ##########
         gt_entry = gt_list[i]
         # Find groundtruth entry for this database
         tmp_i = 0
-        while gt_entry["dataset"] != dbName:
+        while gt_entry["dataset"] != db_name:
             tmp_i += 1
             gt_entry = gt_list[tmp_i]
             assert tmp_i < len(gt_list)
-        assert gt_entry["dataset"] == dbName
+        assert gt_entry["dataset"] == db_name
         event_list = gt_entry["events"]
         for event in event_list:
             gt_products = event["observation"]["products"]
@@ -136,7 +137,7 @@ def evaluate_inventory(dbs, gt_path):
         # Display DB Evaluation
         print(
             "Database: {}, Correct Items on Receipts: {}/{}, Total GT items: {}".format(
-                dbName, db_tp, db_pred_counts, db_gt_counts
+                db_name, db_tp, db_pred_counts, db_gt_counts
             )
         )
 

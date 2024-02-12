@@ -1,4 +1,4 @@
-from cashier import Cashier
+from cashier import process
 
 dbName = "cps-test-01"
-receipts = Cashier().process(dbName)
+receipts = process(dbName)

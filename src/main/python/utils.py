@@ -2,12 +2,12 @@ import json
 import os
 
 from Constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
-from Position import Position
-from ProductExtended import ProductExtended
+from data.Position import Position
+from data.ProductExtended import ProductExtended
 from cpsdriver.codec import Product
 from math_utils import *
 from Constants import BODY_THRESH
-from Coordinates import Coordinates
+from data.Coordinates import Coordinates
 
 """
 Helper functions to associate targets to a product with head ONLY

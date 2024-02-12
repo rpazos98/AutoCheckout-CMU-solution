@@ -1,7 +1,6 @@
-from Constants import INCH_TO_METER
-from Coordinates import Coordinates
+from Constants import INCH_TO_METER, CE_ASSOCIATION, VERBOSE
+from data.Coordinates import Coordinates
 from Target import Target
-from config import *
 
 
 class BookKeeper:

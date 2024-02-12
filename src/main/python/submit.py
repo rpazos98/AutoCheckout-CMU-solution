@@ -48,7 +48,7 @@ def generate_output():
         print(test_db["name"])
         dbName = test_db["name"]
         dbId = test_db["uuid"]
-        receipts = myCashier.process(dbName)
+        receipts = process(dbName)
         myVideoCashier = VideoCashier(db_name=dbName)
         video_receipts = myVideoCashier.process()
         # Generate output file
