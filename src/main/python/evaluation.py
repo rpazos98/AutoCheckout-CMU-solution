@@ -1,9 +1,8 @@
 # Code for Evaluation
-from book_keeper import *
 import json
 
-from constants import DEBUG, VERBOSE
 from cashier import process
+from constants import DEBUG, VERBOSE
 
 """
 Groundtruth file contains pickup event and putback event separately.

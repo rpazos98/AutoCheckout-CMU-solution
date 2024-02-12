@@ -1,13 +1,6 @@
 # from cpsdriver.codec import DocObjectCodec
 from pymongo import MongoClient
 
-# import moviepy
-# from moviepy.editor import *
-# from moviepy.video.fx.crop import crop
-
-from score_calculate import *
-from weight_trigger import WeightTrigger
-from cpsdriver.codec import Targets, DocObjectCodec
 from constants import (
     VERBOSE,
     VIZ,
@@ -15,10 +8,18 @@ from constants import (
     CE_ASSOCIATION,
     CLOSEST_ASSOCIATION,
 )
+from cpsdriver.codec import Targets, DocObjectCodec
+from score_calculate import *
+from book_keeper import BookKeeper
 from utils import *
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
 from video.viz_utils import VizUtils
+from weight_trigger import WeightTrigger
+
+# import moviepy
+# from moviepy.editor import *
+# from moviepy.video.fx.crop import crop
 
 # import cv2
 # import mediapipe as mp

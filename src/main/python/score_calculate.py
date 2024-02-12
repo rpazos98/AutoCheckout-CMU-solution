@@ -1,5 +1,3 @@
-from book_keeper import BookKeeper
-from weight_trigger import PickUpEvent
 from product_score import ProductScore
 from utils import (
     get_product_ids_from_position_2d,
@@ -7,13 +5,13 @@ from utils import (
     get_product_by_id,
     area_under_two_gaussians,
 )
+from weight_trigger import PickUpEvent
 
 sigmaForEventWeight = 10.0  # gram
 sigmaForProductWeight = 10.0  # gram
 
 
 class ScoreCalculator:
-
     # [ProductScore]
     productScoreRank: list
 

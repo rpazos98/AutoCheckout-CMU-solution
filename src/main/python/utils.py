@@ -3,14 +3,14 @@ import math
 import os
 
 import numpy as np
+from scipy.stats import norm
 
+from constants import BODY_THRESH
 from constants import NUM_GONDOLA, NUM_SHELF, NUM_PLATE
+from cpsdriver.codec import Product
+from data.coordinates import Coordinates
 from data.position import Position
 from data.product_extended import ProductExtended
-from cpsdriver.codec import Product
-from constants import BODY_THRESH
-from data.coordinates import Coordinates
-from scipy.stats import norm
 
 """
 Helper functions to associate targets to a product with head ONLY
@@ -209,7 +209,6 @@ def get_product_by_id(product_id, products_cache):
 
 
 def build_all_products_cache(products_cursor):
-
     products_cache = {}
     product_ids_from_products_table = set()
 

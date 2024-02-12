@@ -23,13 +23,13 @@ array = array.reshape(res['document']['plate_data']['values']['shape'])
 
 The array should have `NaN`s in the first column/row of every time slice.
 
-The depth data can be decoded a similar way, but will have `uint16` values and requires `zstd` 
+The depth data can be decoded a similar way, but will have `uint16` values and requires `zstd`
 decompression after the base64 decoding.
 
 Each of these types of underlying data type and any additional compression can be seen in the
 `type` and `encoding` fields respectively. At the same level `shape` will show the overall shape
 of the matrix. e.g. for sensors `python_obj['document']['plate_data']['values']['type']` will have
-the data type of the byte array and for depth 
+the data type of the byte array and for depth
 `python_obj['document']['frame_message']['frames'][0]['frame']['encoding']` would have the additional
 encoding done to the depth frame (which should be `zstd`.
 

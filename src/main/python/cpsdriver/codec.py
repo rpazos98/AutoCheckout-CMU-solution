@@ -1,5 +1,5 @@
-from typing import NamedTuple
 from base64 import b64decode
+from typing import NamedTuple
 
 import numpy as np
 

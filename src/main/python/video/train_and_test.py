@@ -4,9 +4,6 @@ from detecto.core import Dataset, Model, DataLoader
 from detecto.utils import read_image
 from detecto.visualize import (
     show_labeled_image,
-    plot_prediction_grid,
-    detect_video,
-    detect_live,
 )
 from matplotlib import pyplot as plt
 

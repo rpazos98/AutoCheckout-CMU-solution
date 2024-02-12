@@ -1,8 +1,8 @@
-from cashier import Cashier, VideoCashier
-import subprocess
 import json
 import os
 from pprint import pprint
+
+from cashier import Cashier, VideoCashier
 
 
 def output_json(db_id, user, receipts, path):
