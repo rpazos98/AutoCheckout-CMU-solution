@@ -1,7 +1,8 @@
 import numpy as np
 
 from data.pickup_event import PickUpEvent
-from utils import init_1d_array, rolling_window
+
+from utils.coordinate_utils import init_nd_array, rolling_window
 
 
 class WeightTrigger:
@@ -43,7 +44,7 @@ class WeightTrigger:
     def get_agg_weight(self, number_gondolas=5):
         agg_plate_data = [None] * number_gondolas
         agg_shelf_data = [None] * number_gondolas
-        timestamps = init_1d_array(number_gondolas)
+        timestamps = init_nd_array(number_gondolas)
 
         for item in self.plate_data:
             gondola_id = item.plate_id.gondola_id
@@ -84,7 +85,7 @@ class WeightTrigger:
         return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
     def get_agg_timestamps(self, number_gondolas=5):
-        agg_timestamps = init_1d_array(number_gondolas)
+        agg_timestamps = init_nd_array(number_gondolas)
         for gondola_id in range(number_gondolas):
             for i, date_time in enumerate(self.timestamps[gondola_id]):
                 if i < len(self.timestamps[gondola_id]) - 1:

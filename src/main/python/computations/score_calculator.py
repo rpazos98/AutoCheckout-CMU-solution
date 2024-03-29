@@ -1,12 +1,12 @@
 from data.pickup_event import PickUpEvent
 from data.product_score import ProductScore
-from utils import (
+
+from utils.math_utils import area_under_two_gaussians
+from utils.product_utils import (
+    get_product_by_id,
     get_product_ids_from_position_2d,
     get_product_positions,
-    get_product_by_id,
-    area_under_two_gaussians,
 )
-
 
 sigmaForEventWeight = 10.0  # gram
 sigmaForProductWeight = 10.0  # gram

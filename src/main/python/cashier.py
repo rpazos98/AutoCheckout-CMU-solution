@@ -1,6 +1,11 @@
 # from cpsdriver.codec import DocObjectCodec
+import json
+
 from pymongo import MongoClient
 
+from computations.book_keeper import BookKeeper
+from computations.score_calculator import *
+from computations.weight_trigger import WeightTrigger
 from constants import (
     VERBOSE,
     VIZ,
@@ -9,13 +14,22 @@ from constants import (
     CLOSEST_ASSOCIATION,
 )
 from cpsdriver.codec import Targets, DocObjectCodec
-from computations.score_calculator import *
-from computations.book_keeper import BookKeeper
-from utils import *
+from utils.coordinate_utils import get_3d_coordinates_for_plate
+from utils.planogram_utils import load_planogram
+from utils.product_utils import (
+    build_all_products_cache,
+    get_product_ids_from_position_3d,
+)
+from utils.store_meta_utils import build_dicts_from_store_meta
+from utils.target_association_utils import (
+    associate_product_ce,
+    associate_product_closest,
+    associate_product_naive,
+)
+from utils.time_utils import get_test_start_time
 
 # 0.75 might be better but its results jitter betweeen either 82.4 or 83.2???
 from video.viz_utils import VizUtils
-from computations.weight_trigger import WeightTrigger
 
 # import moviepy
 # from moviepy.editor import *
@@ -153,7 +167,7 @@ def process(db_name):
         timestamps,
     )
     events = weight_trigger.splitEvents(events)
-    events.sort(key=lambda pickUpEvent: pickUpEvent.triggerBegin)
+    events.sort(key=lambda pick_up_event: pick_up_event.triggerBegin)
 
     viz = VizUtils(
         events, timestamps, db_name, weight_shelf_mean, weight_shelf_std, bookkeeper
