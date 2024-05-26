@@ -9,8 +9,3 @@ plotly
 pandas
 moviepy==1.0.3
 black
-opencv-python
-pascal-voc-writer
-detecto
-albumentations
-tqdm
