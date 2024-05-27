@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import zipfile
 from datetime import datetime
@@ -17,7 +18,7 @@ testCases = []
 if response.status_code == 200:
     responsStr = response.content
     testCases = json.loads(responsStr)
-    with open("../../../../doc/competition/test_cases.json", "w") as f:
+    with open("competition/test_cases.json", "w") as f:
         json.dump(testCases, f)
 
 
@@ -108,7 +109,7 @@ def get_dataset():
 def get_product_image_dataset():
     # load links into a list
     links = []
-    with open("../../../../doc/competition/product-dataset-reduced.txt") as f:
+    with open("./competition/product-dataset-reduced.txt") as f:
         links = f.readlines()
     # download the zip
     for link in tqdm.tqdm(links, desc="Zip downloading"):
@@ -135,5 +136,4 @@ def get_product_image_dataset():
 
 
 if __name__ == "__main__":
-    # get_dataset()
-    get_product_image_dataset()
+    get_dataset()

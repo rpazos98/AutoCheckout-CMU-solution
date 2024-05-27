@@ -1,7 +1,6 @@
 videos
 archives
 .ipynb_checkpoints
-data
 *.pth
 __pycache__
 env
