@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 from PIL.ImageOps import crop
+from bson import timestamp
 from pymongo import MongoClient
 
 from computations.book_keeper import BookKeeper
@@ -75,6 +76,37 @@ Cashier class to generate receipts
 """
 
 SHOULD_GRAPH = False
+
+
+def build_videos(events, frame_cursor):
+    for event in events:
+        # Convert to Unix timestamps
+        start_timestamp = event.triggerBegin - 3
+        end_timestamp = event.triggerBegin + 3
+
+        # Retrieve the filtered documents
+        filtered_documents = frame_cursor.find(
+            {"timestamp": {"$gte": start_timestamp, "$lt": end_timestamp}}
+        )
+
+        camera_ids = frame_cursor.distinct('camera_id')
+
+        # Group documents by camera_id
+        grouped_documents = {key: [] for key in camera_ids}
+        for doc in filtered_documents:
+            camera_id = doc["camera_id"]
+            frame = doc['document']['frame_message']['frames'][0]['frame']
+            grouped_documents[camera_id].append({"data": frame, "timestamp": doc["timestamp"]})
+
+        # Sort each group by timestamp
+        for camera_id in grouped_documents:
+            grouped_documents[camera_id].sort(key=lambda x: x["timestamp"])
+
+        # Print the results
+        for camera_id, docs in grouped_documents.items():
+            print(f"Camera ID: {camera_id}")
+            for doc in docs:
+                print(doc)
 
 
 def process(db_name):
@@ -163,6 +195,8 @@ def process(db_name):
     )
     events = weight_trigger.splitEvents(events)
     events.sort(key=lambda pick_up_event: pick_up_event.triggerBegin)
+
+    build_videos(events, frame_cursor)
 
     # dictionary recording all receipts
     # KEY: customer ID, VALUE: CustomerReceipt
