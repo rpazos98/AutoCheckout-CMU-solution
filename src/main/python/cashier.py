@@ -1,11 +1,9 @@
 # from cpsdriver.codec import DocObjectCodec
-import datetime
 import json
-import os
-from pathlib import Path
+import base64
 
-from PIL.ImageOps import crop
-from bson import timestamp
+import cv2
+import numpy as np
 from pymongo import MongoClient
 
 from computations.book_keeper import BookKeeper
@@ -17,7 +15,7 @@ from constants import (
     CE_ASSOCIATION,
     CLOSEST_ASSOCIATION,
 )
-from cpsdriver.codec import Targets, DocObjectCodec
+from cpsdriver.codec import DocObjectCodec
 from utils.coordinate_utils import get_3d_coordinates_for_plate
 from utils.planogram_utils import load_planogram
 from utils.product_utils import (
@@ -78,8 +76,27 @@ Cashier class to generate receipts
 SHOULD_GRAPH = False
 
 
-def build_videos(events, frame_cursor):
-    for event in events:
+def turn_into_video(docs, db_name, event_idx, cameraid):
+    for idx, data in enumerate(docs):
+        # Decode the image data
+        video_data = data["data"]
+        bytes_vals = bytes(video_data["data"], "utf-8").decode("unicode_escape").encode("latin1")
+        image_bytes = base64.b64decode(bytes_vals)
+        img_np = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+
+        # Append the resized image to a list of frames
+        if idx == 0:
+            height, width, layers = img.shape
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            video = cv2.VideoWriter('./tmp/{}-{}-{}-video.avi'.format(db_name, event_idx, cameraid), fourcc, 20.0, (width, height))
+
+        video.write(img)
+    return video
+
+
+def build_videos(events, frame_cursor, db_name):
+    for e_idx, event in enumerate(events):
         # Convert to Unix timestamps
         start_timestamp = event.triggerBegin - 3
         end_timestamp = event.triggerBegin + 3
@@ -105,8 +122,8 @@ def build_videos(events, frame_cursor):
         # Print the results
         for camera_id, docs in grouped_documents.items():
             print(f"Camera ID: {camera_id}")
-            for doc in docs:
-                print(doc)
+            video = turn_into_video(docs, db_name, e_idx, camera_id)
+            video.release()
 
 
 def process(db_name):
@@ -196,7 +213,7 @@ def process(db_name):
     events = weight_trigger.splitEvents(events)
     events.sort(key=lambda pick_up_event: pick_up_event.triggerBegin)
 
-    build_videos(events, frame_cursor)
+    build_videos(events, frame_cursor, db_name)
 
     # dictionary recording all receipts
     # KEY: customer ID, VALUE: CustomerReceipt
